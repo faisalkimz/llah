@@ -1,2 +1,5 @@
-// billing-periods business rules. Keep Express request/response objects out of this layer.
-export const service = {};
+import * as repo from './repository.js';
+
+export async function listBillingPeriods(organizationId, filters) {
+  return await repo.findBillingPeriodsByOrganization(organizationId, filters);
+}

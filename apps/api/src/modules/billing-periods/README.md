@@ -1,5 +1,25 @@
-# Billing periods
+# Billing Periods Module
 
-This module is intentionally scaffolded but not falsely marked complete. Implement it only when its turn arrives in `BUILD-ORDER.md`.
+Lists active billing periods derived from subscription data.
 
-Required structure: validation -> repository -> service -> route/controller -> authorization -> tests -> web/mobile integration.
+## API Endpoints
+
+### GET /api/billing-periods
+List billing periods for an organization.
+
+**Headers:**
+- `x-organization-id` (required)
+
+**Query:**
+- `customerId` (string, optional)
+- `subscriptionId` (string, optional)
+- `limit` (number, default: 20, max: 100)
+- `offset` (number, default: 0)
+
+**Response:**
+Returns subscription periods with customer and plan details.
+
+## Features
+- View current and historical billing periods
+- Filter by customer or subscription
+- Derived from subscription current period fields
