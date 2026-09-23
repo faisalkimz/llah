@@ -1,5 +1,17 @@
-# Payment-provider webhooks
+# Webhooks Inbound Module
 
-This module is intentionally scaffolded but not falsely marked complete. Implement it only when its turn arrives in `BUILD-ORDER.md`.
+Receives webhooks from payment providers.
 
-Required structure: validation -> repository -> service -> route/controller -> authorization -> tests -> web/mobile integration.
+## API Endpoints
+
+### POST /api/webhooks-inbound/stripe
+Stripe webhook endpoint.
+
+### POST /api/webhooks-inbound/paypal
+PayPal webhook endpoint.
+
+## Features
+- Provider-specific webhook handling
+- Signature verification
+- Event processing
+- Idempotency

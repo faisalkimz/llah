@@ -1,2 +1,5 @@
-// webhooks-inbound data-access layer. Add Prisma queries here when this module is active.
+import prisma from '../../lib/prisma.js';
+
+// Webhook processing will use payment and invoice repositories
 export const repository = {};
+

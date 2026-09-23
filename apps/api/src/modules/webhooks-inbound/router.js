@@ -1,4 +1,25 @@
 import { Router } from 'express';
+import * as service from './service.js';
+import { success, error as errorResponse } from '../../lib/api-response.js';
+
 const router = Router();
-router.get('/', (req,res)=>res.status(501).json({error:{code:'MODULE_NOT_IMPLEMENTED',message:'Payment-provider webhooks is scaffolded and will be implemented in build order.'}}));
+
+router.post('/stripe', async (req, res) => {
+  try {
+    const result = await service.handleStripeWebhook(req.body, req.headers);
+    return res.json(success(result));
+  } catch (err) {
+    return res.status(err.status || 500).json(errorResponse(err.message));
+  }
+});
+
+router.post('/paypal', async (req, res) => {
+  try {
+    const result = await service.handlePayPalWebhook(req.body, req.headers);
+    return res.json(success(result));
+  } catch (err) {
+    return res.status(err.status || 500).json(errorResponse(err.message));
+  }
+});
+
 export default router;
