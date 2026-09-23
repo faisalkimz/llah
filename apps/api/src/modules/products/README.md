@@ -1,5 +1,35 @@
-# Products
+# Products Module
 
-This module is intentionally scaffolded but not falsely marked complete. Implement it only when its turn arrives in `BUILD-ORDER.md`.
+**Status**: ✅ Complete  
+**Module ID**: 09  
+**Organization Scoping**: Yes
 
-Required structure: validation -> repository -> service -> route/controller -> authorization -> tests -> web/mobile integration.
+## Overview
+
+Products represent billable offerings. Each product can have multiple prices with different billing schemes.
+
+## API Endpoints
+
+### POST /v1/products
+Create product.
+
+**Request**:
+```json
+{
+  "name": "API Access",
+  "description": "Access to our REST API",
+  "active": true
+}
+```
+
+### GET /v1/products
+List products (`search`, `active`, pagination).
+
+### GET /v1/products/:id
+Get product with price count.
+
+### PATCH /v1/products/:id
+Update name, description, or active status.
+
+### DELETE /v1/products/:id
+Delete product.
