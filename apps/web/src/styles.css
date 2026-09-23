@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply m-0 bg-canvas text-ink antialiased;
+  }
+  
+  * {
+    @apply border-line;
+  }
+}
+
+@layer components {
+  .llah-input {
+    @apply w-full rounded border bg-white px-3 py-2 text-sm outline-none focus:border-ink focus:ring-1 focus:ring-ink/20;
+  }
+  
+  .llah-button {
+    @apply inline-flex items-center justify-center rounded bg-ink px-3 py-2 text-sm font-medium text-white hover:bg-ink/90 disabled:opacity-50 transition-all;
+  }
+  
+  .llah-card {
+    @apply rounded border bg-white;
+  }
+  
+  /* Grid background */
+  .grid-bg {
+    background-image: linear-gradient(to right, #e5e5e5 1px, transparent 1px),
+                      linear-gradient(to bottom, #e5e5e5 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
+  /* Thin border utility */
+  .border-thin {
+    border-width: 0.5px;
+  }
+}

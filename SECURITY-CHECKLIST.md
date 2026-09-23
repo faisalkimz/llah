@@ -1,0 +1,15 @@
+# Security Checklist
+- strong password hashing
+- refresh token rotation and revocation
+- email verification/password reset with short-lived single-use tokens
+- server-side RBAC and tenant isolation
+- hashed API keys with visible prefixes only
+- rate limiting on auth and ingestion
+- secure headers/CORS
+- provider webhook signature verification
+- secrets excluded from logs
+- audit trail for security/financial changes
+- dependency and secret scanning in CI
+- least-privilege Neon credentials
+- backups tested, not merely configured
+- production HTTPS only
