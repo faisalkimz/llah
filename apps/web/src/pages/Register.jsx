@@ -18,22 +18,32 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const data = await api('/auth/register', {
+      const response = await api('/auth/register', {
         method: 'POST',
         body: JSON.stringify(form)
       });
 
-      // Decode JWT to get user info
-      const payload = JSON.parse(atob(data.tokens.accessToken.split('.')[1]));
+      console.log('Register response:', response);
+
+      if (!response.success) {
+        throw new Error(response.error.message);
+      }
+
+      const { user, tokens } = response.data;
       
-      authLogin(data.tokens, {
+      // Decode JWT to get user info
+      const payload = JSON.parse(atob(tokens.accessToken.split('.')[1]));
+      
+      authLogin(tokens, {
         id: payload.sub,
         email: payload.email,
+        name: user.name,
         emailVerified: payload.emailVerified || false
       });
       
       nav('/dashboard');
     } catch (e) {
+      console.error('Registration error:', e);
       setError(e.message);
     } finally {
       setLoading(false);

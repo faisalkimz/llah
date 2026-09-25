@@ -17,17 +17,24 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const data = await api('/auth/login', {
+      const response = await api('/auth/login', {
         method: 'POST',
         body: JSON.stringify(form)
       });
 
-      // Decode JWT to get user info
-      const payload = JSON.parse(atob(data.tokens.accessToken.split('.')[1]));
+      if (!response.success) {
+        throw new Error(response.error.message);
+      }
+
+      const { user, tokens } = response.data;
       
-      authLogin(data.tokens, {
+      // Decode JWT to get user info
+      const payload = JSON.parse(atob(tokens.accessToken.split('.')[1]));
+      
+      authLogin(tokens, {
         id: payload.sub,
         email: payload.email,
+        name: user.name,
         emailVerified: payload.emailVerified || false
       });
       

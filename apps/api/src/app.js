@@ -6,6 +6,10 @@ import pinoHttp from 'pino-http';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { apiRouter } from './routes.js';
+
+// Handle BigInt serialization in JSON
+BigInt.prototype.toJSON = function() { return this.toString(); };
+
 export const app = express();
 app.set('trust proxy', 1);
 app.use(pinoHttp());

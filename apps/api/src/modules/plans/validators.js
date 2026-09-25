@@ -7,7 +7,7 @@ export const createPlanSchema = Joi.object({
   items: Joi.array().items(Joi.object({
     priceId: Joi.string().required(),
     sortOrder: Joi.number().integer().min(0).default(0)
-  })).min(1).required()
+  })).default([])
 });
 
 export const updatePlanSchema = Joi.object({
