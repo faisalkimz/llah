@@ -8,16 +8,18 @@ export const createPaymentSchema = z.object({
   amountMinor: z.number().int().positive(),
 });
 
+// Only PENDING → SUCCEEDED | FAILED transitions are valid.
+// SUCCEEDED and FAILED are terminal; callers may only set one of those two values.
 export const updatePaymentSchema = z
   .object({
-    status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']).optional(),
+    status: z.enum(['SUCCEEDED', 'FAILED']).optional(),
     providerPaymentId: z.string().nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'At least one field required' });
 
 export const listPaymentsSchema = z.object({
   invoiceId: z.string().optional(),
-  status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']).optional(),
+  status: z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED']).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });

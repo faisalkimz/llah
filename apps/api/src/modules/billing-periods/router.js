@@ -19,4 +19,14 @@ router.get('/', async (req, res) => {
   }
 });
 
+// POST /:id/close — close a billing period and generate an invoice
+router.post('/:id/close', async (req, res) => {
+  try {
+    const invoice = await service.closeBillingPeriod(req.organizationId, req.params.id);
+    return res.json({ data: invoice });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: { code: err.status === 422 ? 'INVALID_STATE' : 'INTERNAL_ERROR', message: err.message } });
+  }
+});
+
 export default router;

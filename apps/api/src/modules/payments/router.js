@@ -6,6 +6,7 @@ import * as validators from './validators.js';
 const router = Router();
 router.use(requireOrg);
 
+// Create payment
 router.post('/', async (req, res) => {
   try {
     const result = validators.createPaymentSchema.safeParse(req.body);
@@ -41,7 +42,8 @@ router.get('/:paymentId', async (req, res) => {
   }
 });
 
-router.put('/:paymentId', async (req, res) => {
+// PATCH /:id — update payment status (state machine enforced in service)
+router.patch('/:paymentId', async (req, res) => {
   try {
     const result = validators.updatePaymentSchema.safeParse(req.body);
     if (!result.success) {
@@ -50,7 +52,7 @@ router.put('/:paymentId', async (req, res) => {
     const payment = await service.updatePayment(req.params.paymentId, req.organizationId, result.data);
     return res.json({ data: payment });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+    return res.status(err.status || 500).json({ error: { code: err.status === 422 ? 'INVALID_STATE' : 'INTERNAL_ERROR', message: err.message } });
   }
 });
 

@@ -41,6 +41,7 @@ router.get('/:invoiceId', async (req, res) => {
   }
 });
 
+// Only allow editing DRAFT invoices; finalized invoices are immutable
 router.put('/:invoiceId', async (req, res) => {
   try {
     const result = validators.updateInvoiceSchema.safeParse(req.body);
@@ -50,16 +51,27 @@ router.put('/:invoiceId', async (req, res) => {
     const invoice = await service.updateInvoice(req.params.invoiceId, req.organizationId, result.data);
     return res.json({ data: invoice });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+    return res.status(err.status || 500).json({ error: { code: err.status === 422 ? 'INVALID_STATE' : 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
+// DRAFT → OPEN
 router.post('/:invoiceId/finalize', async (req, res) => {
   try {
     const invoice = await service.finalizeInvoice(req.params.invoiceId, req.organizationId);
     return res.json({ data: invoice });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+    return res.status(err.status || 500).json({ error: { code: err.status === 422 ? 'INVALID_STATE' : 'INTERNAL_ERROR', message: err.message } });
+  }
+});
+
+// OPEN → VOID
+router.post('/:invoiceId/void', async (req, res) => {
+  try {
+    const invoice = await service.voidInvoice(req.params.invoiceId, req.organizationId);
+    return res.json({ data: invoice });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: { code: err.status === 422 ? 'INVALID_STATE' : 'INTERNAL_ERROR', message: err.message } });
   }
 });
 

@@ -1,27 +1,29 @@
 import prisma from '../../lib/prisma.js';
 
+/**
+ * createInvoice — creates an invoice with line items.
+ *
+ * IMPORTANT: subtotalMinor and totalMinor must be computed by the caller
+ * (service layer) using integer arithmetic only. This repository stores
+ * what it is given; it does NOT recalculate totals.
+ *
+ * Each line item must supply `amountMinor` (BigInt or number) pre-computed
+ * as floor(quantity) * unitAmountMinor.
+ */
 export async function createInvoice(data) {
-  const { lines, ...invoiceData } = data;
-  
-  const lineAmounts = lines.map(line => {
-    const quantity = Number(line.quantity);
-    return BigInt(line.unitAmountMinor) * BigInt(Math.floor(quantity * 100)) / BigInt(100);
-  });
-  
-  const subtotal = lineAmounts.reduce((sum, amt) => sum + amt, BigInt(0));
-  
+  const { lines, subtotalMinor, totalMinor, ...invoiceData } = data;
+
   return await prisma.invoice.create({
     data: {
       ...invoiceData,
-      subtotalMinor: subtotal,
-      totalMinor: subtotal,
+      subtotalMinor: BigInt(subtotalMinor ?? 0),
+      totalMinor: BigInt(totalMinor ?? subtotalMinor ?? 0),
       lines: {
-        create: lines.map(line => ({
+        create: lines.map((line) => ({
           description: line.description,
           quantity: line.quantity,
           unitAmountMinor: BigInt(line.unitAmountMinor),
-          amountMinor: BigInt(line.unitAmountMinor) * BigInt(Math.floor(Number(line.quantity) * 100)) / BigInt(100),
-          metadata: line.metadata
+          amountMinor: BigInt(line.amountMinor)
         }))
       }
     },
@@ -69,5 +71,53 @@ export async function updateInvoice(invoiceId, organizationId, data) {
       customer: true,
       lines: true
     }
+  });
+}
+
+/**
+ * Find the maximum invoice sequence number for an org to support sequencing.
+ * Returns the raw `number` string of the most recently created invoice, or null.
+ */
+export async function findLastInvoiceNumber(organizationId) {
+  const invoice = await prisma.invoice.findFirst({
+    where: { organizationId },
+    orderBy: { createdAt: 'desc' },
+    select: { number: true }
+  });
+  return invoice?.number ?? null;
+}
+
+/**
+ * Add a credit line to an existing invoice and update its totalMinor.
+ */
+export async function addCreditLine(invoiceId, organizationId, { description, amountToApplyMinor }) {
+  return await prisma.$transaction(async (tx) => {
+    const invoice = await tx.invoice.findFirst({
+      where: { id: invoiceId, organizationId }
+    });
+    if (!invoice) {
+      const err = new Error('Invoice not found');
+      err.status = 404;
+      throw err;
+    }
+
+    // Create credit line (negative amount)
+    await tx.invoiceLine.create({
+      data: {
+        invoiceId,
+        description,
+        quantity: 1,
+        unitAmountMinor: -BigInt(amountToApplyMinor),
+        amountMinor: -BigInt(amountToApplyMinor)
+      }
+    });
+
+    // Update invoice totalMinor
+    const newTotal = BigInt(invoice.totalMinor) - BigInt(amountToApplyMinor);
+    return await tx.invoice.update({
+      where: { id: invoiceId },
+      data: { totalMinor: newTotal },
+      include: { customer: true, lines: true, payments: true }
+    });
   });
 }

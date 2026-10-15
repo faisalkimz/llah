@@ -1,4 +1,14 @@
+import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
+
+// Valid status transitions. SUCCEEDED and FAILED are terminal.
+const VALID_TRANSITIONS = {
+  PENDING: ['SUCCEEDED', 'FAILED']
+};
+
+function isValidTransition(from, to) {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
 
 export async function createPayment(organizationId, paymentData) {
   return await repo.createPayment({
@@ -22,6 +32,16 @@ export async function getPayment(paymentId, organizationId) {
   return payment;
 }
 
+/**
+ * Update payment status, enforcing the state machine.
+ * PENDING → SUCCEEDED | FAILED
+ * SUCCEEDED and FAILED are terminal states.
+ *
+ * When transitioning to SUCCEEDED:
+ *   - Fetch the linked Invoice
+ *   - Add payment.amountMinor to invoice.amountPaidMinor
+ *   - If amountPaidMinor >= totalMinor, mark invoice as PAID
+ */
 export async function updatePayment(paymentId, organizationId, updates) {
   const payment = await repo.findPaymentById(paymentId, organizationId);
   if (!payment) {
@@ -29,5 +49,39 @@ export async function updatePayment(paymentId, organizationId, updates) {
     error.status = 404;
     throw error;
   }
-  return await repo.updatePayment(paymentId, organizationId, updates);
+
+  const { status } = updates;
+
+  if (status && status !== payment.status) {
+    if (!isValidTransition(payment.status, status)) {
+      const err = new Error(`Invalid status transition: ${payment.status} → ${status}`);
+      err.status = 422;
+      throw err;
+    }
+  }
+
+  // Apply the payment update
+  const updated = await repo.updatePayment(paymentId, organizationId, updates);
+
+  // Reconcile invoice when payment succeeds
+  if (status === 'SUCCEEDED' && payment.invoiceId) {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: payment.invoiceId, organizationId }
+    });
+
+    if (invoice) {
+      const newAmountPaid = BigInt(invoice.amountPaidMinor) + BigInt(payment.amountMinor);
+      const isPaid = newAmountPaid >= BigInt(invoice.totalMinor);
+
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          amountPaidMinor: newAmountPaid,
+          ...(isPaid ? { status: 'PAID', paidAt: new Date() } : {})
+        }
+      });
+    }
+  }
+
+  return updated;
 }
