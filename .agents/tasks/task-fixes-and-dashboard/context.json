@@ -1,0 +1,33 @@
+{
+  "project_type": "npm workspaces monorepo: Express API (apps/api) + React/Vite web (apps/web) + Expo mobile (apps/mobile)",
+  "language": "JavaScript only — NO TypeScript, no .ts/.tsx files ever",
+  "build_system": "npm workspaces; root package.json has workspace scripts. Key quirk: tailwind.config.js uses ESM export default, postcss.config.js uses CJS module.exports.",
+  "test_framework": "vitest in apps/web (npm run test -w @llah/web); API has no test suite yet — just run node syntax checks",
+  "build_command": "npm run build -w @llah/web  (web only needed for verification)",
+  "test_command": "npm run test -w @llah/web",
+  "verification_instructions": "1) For API JS changes: cd apps/api && node --input-type=module < src/config/env.js  (or node -e import check). 2) For web changes: npm run build -w @llah/web must exit 0. 3) Dev smoke test: npm run dev:api + npm run dev:web, open http://localhost:5173/dashboard.",
+  "snapshot_or_generated_files": "package-lock.json is regenerated when you run npm install. Commit it.",
+  "environment_constraints": "Windows PowerShell shell. Do not use bash-specific syntax. Absolute worktree path: c:\\Users\\Coding-Kimz\\Desktop\\crazy\\llah. Never write outside that path.",
+  "contribution_requirements": "AGENT-START-HERE.md: JS only, Tailwind only (no MUI/Chakra/Bootstrap), one module at a time, no fake completion, text-first calm UI, money never in floating point.",
+  "key_patterns": "API calls in web pages use `import { api } from '../lib/api'` (NOT useAuth().api — Customers.jsx pattern). Org ID from localStorage.getItem('current_organization_id'). State: useState + useEffect. API auto-injects auth + x-organization-id headers. Tailwind custom tokens: canvas, ink, line, muted, success, warning, danger, brand.*. Custom classes: llah-card, llah-input, llah-button, llah-table, btn-primary, btn-secondary, input. PageHeader component at components/ui/PageHeader.jsx accepts {title, description, action}.",
+  "relevant_files": [
+    "apps/api/.env.example",
+    "apps/api/src/config/env.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/web/package.json",
+    "apps/web/src/pages/Dashboard.jsx",
+    "apps/web/src/pages/Customers.jsx",
+    "apps/web/src/pages/Subscriptions.jsx",
+    "apps/web/src/lib/api.js",
+    "apps/web/src/components/ui/PageHeader.jsx",
+    "apps/web/src/router.jsx",
+    "apps/web/tailwind.config.js",
+    "apps/web/src/styles.css",
+    "apps/api/src/modules/invoices/router.js",
+    "apps/api/src/modules/invoices/validators.js",
+    "apps/api/src/modules/customers/router.js",
+    "apps/api/src/modules/subscriptions/router.js",
+    "apps/api/src/modules/usage-aggregation/router.js"
+  ],
+  "directory_structure": "llah/ — root (docs, prisma/, packages/). apps/api/src/ — config/, lib/, middleware/, modules/<name>/{router,service,repository,validators}.js, routes.js (mounts all routers). apps/web/src/ — pages/, components/ui/, contexts/, layouts/, lib/, router.jsx, main.jsx, styles.css."
+}

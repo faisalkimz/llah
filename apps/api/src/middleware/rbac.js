@@ -9,39 +9,37 @@ import * as membershipRepository from '../modules/organizations/membership-repos
  * Require user to be a member of the organization
  * Organization ID should be in req.params.id or req.params.organizationId
  */
-export function requireOrgAccess(req, res, next) {
-  return async (req, res, next) => {
-    try {
-      const organizationId = req.params.id || req.params.organizationId;
-      
-      if (!organizationId) {
-        return res.status(400).json({
-          success: false,
-          error: 'Organization ID not provided',
-        });
-      }
+export async function requireOrgAccess(req, res, next) {
+  try {
+    const organizationId = req.params.id || req.params.organizationId;
 
-      const membership = await membershipRepository.findByUserAndOrg(
-        req.user.id,
-        organizationId
-      );
-
-      if (!membership) {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied. You are not a member of this organization.',
-        });
-      }
-
-      // Attach membership info to request for use in route handlers
-      req.membership = membership;
-      req.organizationId = organizationId;
-
-      next();
-    } catch (error) {
-      next(error);
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Organization ID not provided',
+      });
     }
-  };
+
+    const membership = await membershipRepository.findByUserAndOrg(
+      req.user.id,
+      organizationId
+    );
+
+    if (!membership) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. You are not a member of this organization.',
+      });
+    }
+
+    // Attach membership info to request for use in route handlers
+    req.membership = membership;
+    req.organizationId = organizationId;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**

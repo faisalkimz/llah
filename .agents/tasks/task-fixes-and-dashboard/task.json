@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fixes-and-dashboard",
+  "task_description": "Fix 3 blockers (env setup, RBAC double-wrap, MUI removal) then replace the Dashboard placeholder with a real data-driven page pulling from existing API endpoints.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

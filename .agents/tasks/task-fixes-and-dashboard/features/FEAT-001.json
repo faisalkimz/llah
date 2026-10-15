@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix three blockers that prevent a clean dev startup: (1) missing apps/api/.env, (2) requireOrgAccess double-wrap that silently skips org auth checks, (3) dead MUI deps that violate the Tailwind-only rule.",
+  "status": "pending",
+  "steps": [
+    "Create apps/api/.env with these exact values (both JWT secrets are 44 chars, satisfying min(32)):\n  NODE_ENV=development\n  PORT=4000\n  WEB_URL=http://localhost:5173\n  DATABASE_URL=postgresql://localhost:5432/llah_dev\n  DIRECT_URL=postgresql://localhost:5432/llah_dev\n  JWT_ACCESS_SECRET=dev_access_secret_change_in_production_aaaa\n  JWT_REFRESH_SECRET=dev_refresh_secret_change_in_production_bbbb\n  ACCESS_TOKEN_TTL=15m\n  REFRESH_TOKEN_TTL_DAYS=30",
+    "Edit apps/api/src/config/env.js — inside the z.object({...}) add: DIRECT_URL: z.string().min(1).optional()  (optional so it doesn't break if someone runs without it on managed Neon)",
+    "Create apps/web/.env.example with a single line: VITE_API_URL=http://localhost:4000/v1",
+    "Edit apps/api/src/middleware/rbac.js — fix requireOrgAccess: the current signature is `export function requireOrgAccess(req, res, next) { return async (req, res, next) => { ... }; }` which is a factory returning a middleware instead of being a middleware. Change it to `export async function requireOrgAccess(req, res, next) { try { ... } catch(error) { next(error); } }` — promote the inner async body directly, removing the outer wrapper and the inner arrow function. The body content (organizationId extraction, membership check, req.membership/req.organizationId assignment) stays identical.",
+    "Edit apps/web/package.json — remove from the dependencies object: @mui/material, @mui/icons-material, @emotion/react, @emotion/styled",
+    "Run: npm install (from the repo root c:\\Users\\Coding-Kimz\\Desktop\\crazy\\llah) to regenerate node_modules and package-lock.json"
+  ],
+  "acceptance_criteria": [
+    "apps/api/.env exists and contains all 9 keys",
+    "apps/api/src/config/env.js parses successfully when loaded (DIRECT_URL field present in schema)",
+    "apps/web/.env.example exists with VITE_API_URL",
+    "requireOrgAccess is a direct async function (req, res, next) not a function-returning-a-function",
+    "@mui/material, @mui/icons-material, @emotion/react, @emotion/styled are absent from apps/web/package.json dependencies",
+    "npm run build -w @llah/web exits 0 after npm install"
+  ],
+  "verification": [
+    "Run: npm run build -w @llah/web — must exit 0 with no errors",
+    "Run from apps/api: node --input-type=module -e \"import('./src/config/env.js').then(m => console.log('env ok', m.env.PORT))\" — must print 'env ok 4000'"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
