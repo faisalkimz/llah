@@ -41,6 +41,12 @@ enum PaymentStatus {
   PARTIALLY_REFUNDED
 }
 
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
 enum LedgerEntryType {
   CHARGE
   CREDIT
@@ -348,13 +354,15 @@ model Payment {
 }
 
 model Refund {
-  id               String   @id @default(cuid())
+  id               String       @id @default(cuid())
   paymentId        String
   amountMinor      BigInt
   reason           String?
   providerRefundId String?
-  createdAt        DateTime @default(now())
-  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  status           RefundStatus @default(PENDING)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  payment          Payment      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 }
 
 model CreditGrant {

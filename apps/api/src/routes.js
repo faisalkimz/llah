@@ -53,7 +53,7 @@ apiRouter.use('/billing-periods',requireAuth,billingPeriodsRouter);
 apiRouter.use('/ledger',requireAuth,ledgerRouter);
 apiRouter.use('/invoices',requireAuth,invoicesRouter);
 apiRouter.use('/payments',requireAuth,paymentsRouter);
-apiRouter.use('/webhooks-inbound',requireAuth,webhooksInboundRouter);
+apiRouter.use('/webhooks-inbound',webhooksInboundRouter);
 apiRouter.use('/credits',requireAuth,creditsRouter);
 apiRouter.use('/adjustments',requireAuth,adjustmentsRouter);
 apiRouter.use('/refunds',requireAuth,refundsRouter);

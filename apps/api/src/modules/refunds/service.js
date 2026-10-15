@@ -126,25 +126,71 @@ export async function createRefund(orgId, { paymentId, amountMinor, reason }) {
 /**
  * processRefund
  *
- * Advances a refund to SUCCEEDED status.
- *
- * TODO: call payment provider refund API here before updating status.
+ * Advances a refund to SUCCEEDED status and updates the parent payment status
+ * (PARTIALLY_REFUNDED when some amount remains; REFUNDED when fully refunded).
+ * Scoped to the caller's organization through the payment relation.
  *
  * @param {string} refundId
+ * @param {string} organizationId
  */
-export async function processRefund(refundId) {
-  // TODO: call payment provider refund API here
-  const refund = await prisma.refund.update({
-    where: { id: refundId },
-    data: { providerRefundId: null }, // Provider would populate this
+export async function processRefund(refundId, organizationId) {
+  // Fetch via the payment relation so we validate org ownership
+  const existing = await prisma.refund.findFirst({
+    where: {
+      id: refundId,
+      payment: { organizationId },
+    },
     include: {
       payment: {
         include: {
           invoice: { include: { customer: true } },
+          refunds: { select: { amountMinor: true, status: true } },
         },
       },
     },
   });
+
+  if (!existing) {
+    const err = new Error('Refund not found');
+    err.status = 404;
+    throw err;
+  }
+
+  if (existing.status === 'SUCCEEDED') {
+    const err = new Error('Refund is already in SUCCEEDED state');
+    err.status = 422;
+    throw err;
+  }
+
+  // Determine new payment status after this refund succeeds
+  const succeededRefundTotal = existing.payment.refunds
+    .filter((r) => r.status === 'SUCCEEDED' || r.id === refundId)
+    .reduce((sum, r) => sum + BigInt(r.amountMinor), BigInt(0));
+  const paymentAmount = BigInt(existing.payment.amountMinor);
+  const newPaymentStatus =
+    succeededRefundTotal >= paymentAmount ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
+
+  const refund = await prisma.$transaction(async (tx) => {
+    const updated = await tx.refund.update({
+      where: { id: refundId },
+      data: { status: 'SUCCEEDED' },
+      include: {
+        payment: {
+          include: {
+            invoice: { include: { customer: true } },
+          },
+        },
+      },
+    });
+
+    await tx.payment.update({
+      where: { id: existing.paymentId },
+      data: { status: newPaymentStatus },
+    });
+
+    return updated;
+  });
+
   return refund;
 }
 

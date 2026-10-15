@@ -15,13 +15,11 @@ const router = Router();
  */
 router.post('/stripe', async (req, res) => {
   try {
-    // Prefer a raw string body; fall back to re-serialized JSON
-    const rawBody =
-      typeof req.rawBody === 'string'
-        ? req.rawBody
-        : Buffer.isBuffer(req.rawBody)
-        ? req.rawBody.toString('utf8')
-        : JSON.stringify(req.body ?? '');
+    // Require the raw body captured by express.raw(); fail closed if absent
+    if (typeof req.rawBody !== 'string') {
+      return res.status(400).json({ error: { code: 'SIGNATURE_INVALID', message: 'Raw body unavailable — cannot verify signature' } });
+    }
+    const rawBody = req.rawBody;
 
     const signature = req.headers['stripe-signature'];
     const result = await service.handleStripeWebhook(rawBody, signature);
@@ -36,12 +34,11 @@ router.post('/stripe', async (req, res) => {
  */
 router.post('/paypal', async (req, res) => {
   try {
-    const rawBody =
-      typeof req.rawBody === 'string'
-        ? req.rawBody
-        : Buffer.isBuffer(req.rawBody)
-        ? req.rawBody.toString('utf8')
-        : JSON.stringify(req.body ?? '');
+    // Require the raw body captured by express.raw(); fail closed if absent
+    if (typeof req.rawBody !== 'string') {
+      return res.status(400).json({ error: { code: 'SIGNATURE_INVALID', message: 'Raw body unavailable — cannot verify signature' } });
+    }
+    const rawBody = req.rawBody;
 
     const result = await service.handlePayPalWebhook(rawBody, req.headers);
     return res.json({ data: result });

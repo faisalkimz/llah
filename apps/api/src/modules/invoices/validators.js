@@ -12,7 +12,7 @@ export const createInvoiceSchema = z.object({
     .array(
       z.object({
         description: z.string().min(1),
-        quantity: z.number().positive(),
+        quantity: z.number().int().positive(),
         unitAmountMinor: z.number().int(),
         metadata: z.record(z.unknown()).nullable().optional(),
       })

@@ -106,6 +106,13 @@ export async function applyCouponToInvoice(code, invoiceId, orgId) {
     throw err;
   }
 
+  // 5a. Status guard: only DRAFT invoices may be mutated
+  if (invoice.status !== 'DRAFT') {
+    const err = new Error(`Cannot apply coupon to invoice in ${invoice.status} state`);
+    err.status = 422;
+    throw err;
+  }
+
   // 6. Calculate discount amount (integer arithmetic only)
   const subtotal = BigInt(invoice.subtotalMinor);
   let discountAmount;

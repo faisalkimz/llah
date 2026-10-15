@@ -16,6 +16,14 @@ app.use(pinoHttp());
 app.use(helmet());
 app.use(cors({ origin: env.WEB_URL, credentials: true }));
 app.use(rateLimit({ windowMs: 60_000, limit: 300 }));
+// Capture raw body for webhook HMAC verification before json parser runs
+app.use('/v1/webhooks-inbound', express.raw({ type: '*/*', limit: '1mb' }), (req, _res, next) => {
+  if (Buffer.isBuffer(req.body)) {
+    req.rawBody = req.body.toString('utf8');
+    req.body = JSON.parse(req.rawBody || '{}');
+  }
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.get('/health', (req,res)=>res.json({status:'ok',service:'llah-api'}));
 app.use('/v1', apiRouter);

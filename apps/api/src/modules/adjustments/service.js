@@ -59,6 +59,13 @@ export async function createAdjustment(orgId, {
         throw err;
       }
 
+      // Status guard: only DRAFT invoices may be mutated
+      if (invoice.status !== 'DRAFT') {
+        const err = new Error(`Cannot adjust invoice in ${invoice.status} state`);
+        err.status = 422;
+        throw err;
+      }
+
       // CREDIT reduces the invoice total; DEBIT increases it
       const lineAmount = type === 'CREDIT'
         ? -BigInt(Math.abs(amountMinor))
