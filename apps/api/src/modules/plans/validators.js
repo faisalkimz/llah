@@ -1,28 +1,38 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const createPlanSchema = Joi.object({
-  name: Joi.string().required(),
-  description: Joi.string().allow('', null),
-  active: Joi.boolean().default(true),
-  items: Joi.array().items(Joi.object({
-    priceId: Joi.string().required(),
-    sortOrder: Joi.number().integer().min(0).default(0)
-  })).default([])
+export const createPlanSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  active: z.boolean().default(true),
+  items: z
+    .array(
+      z.object({
+        priceId: z.string().min(1),
+        sortOrder: z.number().int().min(0).default(0),
+      })
+    )
+    .default([]),
 });
 
-export const updatePlanSchema = Joi.object({
-  name: Joi.string(),
-  description: Joi.string().allow('', null),
-  active: Joi.boolean()
-}).min(1);
+export const updatePlanSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'At least one field required' });
 
-export const addPlanItemSchema = Joi.object({
-  priceId: Joi.string().required(),
-  sortOrder: Joi.number().integer().min(0).default(0)
+export const addPlanItemSchema = z.object({
+  priceId: z.string().min(1),
+  sortOrder: z.number().int().min(0).default(0),
 });
 
-export const listPlansSchema = Joi.object({
-  active: Joi.boolean(),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+export const listPlansSchema = z.object({
+  active: z
+    .string()
+    .transform((v) => v === 'true')
+    .pipe(z.boolean())
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });

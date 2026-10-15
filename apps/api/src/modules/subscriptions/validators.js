@@ -1,23 +1,25 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const createSubscriptionSchema = Joi.object({
-  customerId: Joi.string().required(),
-  planId: Joi.string().required(),
-  currentPeriodStart: Joi.date().iso().required(),
-  currentPeriodEnd: Joi.date().iso().required()
+export const createSubscriptionSchema = z.object({
+  customerId: z.string().min(1),
+  planId: z.string().min(1),
+  currentPeriodStart: z.string().datetime(),
+  currentPeriodEnd: z.string().datetime(),
 });
 
-export const updateSubscriptionSchema = Joi.object({
-  planId: Joi.string(),
-  status: Joi.string().valid('ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED'),
-  currentPeriodStart: Joi.date().iso(),
-  currentPeriodEnd: Joi.date().iso(),
-  cancelAtPeriodEnd: Joi.boolean()
-}).min(1);
+export const updateSubscriptionSchema = z
+  .object({
+    planId: z.string().min(1).optional(),
+    status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']).optional(),
+    currentPeriodStart: z.string().datetime().optional(),
+    currentPeriodEnd: z.string().datetime().optional(),
+    cancelAtPeriodEnd: z.boolean().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'At least one field required' });
 
-export const listSubscriptionsSchema = Joi.object({
-  customerId: Joi.string(),
-  status: Joi.string().valid('ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED'),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+export const listSubscriptionsSchema = z.object({
+  customerId: z.string().optional(),
+  status: z.enum(['ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });

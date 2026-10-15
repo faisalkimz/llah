@@ -1,8 +1,8 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const listBillingPeriodsSchema = Joi.object({
-  customerId: Joi.string(),
-  subscriptionId: Joi.string(),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+export const listBillingPeriodsSchema = z.object({
+  customerId: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });

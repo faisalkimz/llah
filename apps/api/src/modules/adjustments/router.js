@@ -1,59 +1,43 @@
 import { Router } from 'express';
+import { requireOrg } from '../../middleware/require-org.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
-import { success, error as errorResponse } from '../../lib/api-response.js';
 
 const router = Router();
+router.use(requireOrg);
 
 router.post('/', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.createAdjustmentSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.createAdjustmentSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const adjustment = await service.createAdjustment(organizationId, value);
-    return res.status(201).json(success(adjustment));
+    const adjustment = await service.createAdjustment(req.organizationId, result.data);
+    return res.status(201).json({ data: adjustment });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.get('/', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.listAdjustmentsSchema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.listAdjustmentsSchema.validate(req.query);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const adjustments = await service.listAdjustments(organizationId, value);
-    return res.json(success(adjustments));
+    const adjustments = await service.listAdjustments(req.organizationId, result.data);
+    return res.json({ data: adjustments });
   } catch (err) {
-    return res.status(500).json(errorResponse(err.message));
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.get('/:adjustmentId', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
-    }
-
-    const adjustment = await service.getAdjustment(req.params.adjustmentId, organizationId);
-    return res.json(success(adjustment));
+    const adjustment = await service.getAdjustment(req.params.adjustmentId, req.organizationId);
+    return res.json({ data: adjustment });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 

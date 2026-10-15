@@ -1,18 +1,18 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const createLedgerEntrySchema = Joi.object({
-  customerId: Joi.string().allow(null),
-  type: Joi.string().valid('CHARGE', 'PAYMENT', 'CREDIT', 'REFUND', 'ADJUSTMENT').required(),
-  currency: Joi.string().length(3).uppercase().default('USD'),
-  amountMinor: Joi.number().integer().required(),
-  referenceType: Joi.string().allow('', null),
-  referenceId: Joi.string().allow('', null),
-  description: Joi.string().allow('', null)
+export const createLedgerEntrySchema = z.object({
+  customerId: z.string().nullable().optional(),
+  type: z.enum(['CHARGE', 'PAYMENT', 'CREDIT', 'REFUND', 'ADJUSTMENT']),
+  currency: z.string().length(3).toUpperCase().default('USD'),
+  amountMinor: z.number().int(),
+  referenceType: z.string().nullable().optional(),
+  referenceId: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
 });
 
-export const listLedgerEntriesSchema = Joi.object({
-  customerId: Joi.string(),
-  type: Joi.string().valid('CHARGE', 'PAYMENT', 'CREDIT', 'REFUND', 'ADJUSTMENT'),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+export const listLedgerEntriesSchema = z.object({
+  customerId: z.string().optional(),
+  type: z.enum(['CHARGE', 'PAYMENT', 'CREDIT', 'REFUND', 'ADJUSTMENT']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });

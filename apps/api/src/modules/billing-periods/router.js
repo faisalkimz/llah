@@ -1,26 +1,21 @@
 import { Router } from 'express';
+import { requireOrg } from '../../middleware/require-org.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
-import { success, error as errorResponse } from '../../lib/api-response.js';
 
 const router = Router();
+router.use(requireOrg);
 
 router.get('/', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.listBillingPeriodsSchema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.listBillingPeriodsSchema.validate(req.query);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const periods = await service.listBillingPeriods(organizationId, value);
-    return res.json(success(periods));
+    const periods = await service.listBillingPeriods(req.organizationId, result.data);
+    return res.json({ data: periods });
   } catch (err) {
-    return res.status(500).json(errorResponse(err.message));
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 

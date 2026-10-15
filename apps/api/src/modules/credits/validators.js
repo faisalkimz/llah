@@ -1,15 +1,15 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const createCreditGrantSchema = Joi.object({
-  customerId: Joi.string().required(),
-  currency: Joi.string().length(3).uppercase().default('USD'),
-  amountMinor: Joi.number().integer().positive().required(),
-  reason: Joi.string().allow('', null),
-  expiresAt: Joi.date().iso().allow(null)
+export const createCreditGrantSchema = z.object({
+  customerId: z.string().min(1),
+  currency: z.string().length(3).toUpperCase().default('USD'),
+  amountMinor: z.number().int().positive(),
+  reason: z.string().nullable().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
 });
 
-export const listCreditGrantsSchema = Joi.object({
-  customerId: Joi.string(),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  offset: Joi.number().integer().min(0).default(0)
+export const listCreditGrantsSchema = z.object({
+  customerId: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });

@@ -1,125 +1,87 @@
 import { Router } from 'express';
+import { requireOrg } from '../../middleware/require-org.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
-import { success, error as errorResponse } from '../../lib/api-response.js';
 
 const router = Router();
+router.use(requireOrg);
 
 router.post('/', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.createPlanSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.createPlanSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const plan = await service.createPlan(organizationId, value);
-    return res.status(201).json(success(plan));
+    const plan = await service.createPlan(req.organizationId, result.data);
+    return res.status(201).json({ data: plan });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.get('/', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.listPlansSchema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.listPlansSchema.validate(req.query);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const plans = await service.listPlans(organizationId, value);
-    return res.json(success(plans));
+    const plans = await service.listPlans(req.organizationId, result.data);
+    return res.json({ data: plans });
   } catch (err) {
-    return res.status(500).json(errorResponse(err.message));
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.get('/:planId', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
-    }
-
-    const plan = await service.getPlan(req.params.planId, organizationId);
-    return res.json(success(plan));
+    const plan = await service.getPlan(req.params.planId, req.organizationId);
+    return res.json({ data: plan });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.put('/:planId', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.updatePlanSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.updatePlanSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const plan = await service.updatePlan(req.params.planId, organizationId, value);
-    return res.json(success(plan));
+    const plan = await service.updatePlan(req.params.planId, req.organizationId, result.data);
+    return res.json({ data: plan });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.delete('/:planId', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
-    }
-
-    await service.deletePlan(req.params.planId, organizationId);
-    return res.json(success({ deleted: true }));
+    await service.deletePlan(req.params.planId, req.organizationId);
+    return res.json({ data: { deleted: true } });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.post('/:planId/items', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
+    const result = validators.addPlanItemSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: result.error.errors[0].message } });
     }
-
-    const { error, value } = validators.addPlanItemSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json(errorResponse(error.details[0].message));
-    }
-
-    const item = await service.addPlanItem(req.params.planId, organizationId, value);
-    return res.status(201).json(success(item));
+    const item = await service.addPlanItem(req.params.planId, req.organizationId, result.data);
+    return res.status(201).json({ data: item });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 
 router.delete('/items/:itemId', async (req, res) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    if (!organizationId) {
-      return res.status(400).json(errorResponse('x-organization-id header is required'));
-    }
-
-    await service.removePlanItem(req.params.itemId, organizationId);
-    return res.json(success({ deleted: true }));
+    await service.removePlanItem(req.params.itemId, req.organizationId);
+    return res.json({ data: { deleted: true } });
   } catch (err) {
-    return res.status(err.status || 500).json(errorResponse(err.message));
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
   }
 });
 

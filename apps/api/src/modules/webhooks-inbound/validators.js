@@ -1,7 +1,7 @@
-import Joi from 'joi';
+import { z } from 'zod';
 
-export const handleWebhookSchema = Joi.object({
-  provider: Joi.string().required(),
-  eventType: Joi.string().required(),
-  payload: Joi.object().required()
+export const handleWebhookSchema = z.object({
+  provider: z.string().min(1),
+  eventType: z.string().min(1),
+  payload: z.record(z.unknown()),
 });

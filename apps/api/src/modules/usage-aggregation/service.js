@@ -1,26 +1,57 @@
-import { prisma } from '../../lib/prisma.js';
+import prisma from '../../lib/prisma.js';
 import * as repository from './repository.js';
 
 export async function aggregateUsage(organizationId, params) {
-  const {customerId, meterId, periodStart, periodEnd} = params;
+  const { customerId, meterId, periodStart, periodEnd } = params;
 
-  // Query raw usage events for the period
-  const events = await prisma.usageEvent.findMany({
-    where: {
-      organizationId,
-      customerId,
-      meterId,
-      eventAt: {
-        gte: new Date(periodStart),
-        lte: new Date(periodEnd),
-      },
-    },
+  // Fetch meter to determine aggregation type
+  const meter = await prisma.meter.findFirst({
+    where: { id: meterId, organizationId },
   });
 
-  // Aggregate quantity (SUM for now - extend for COUNT/MAX/LATEST later)
-  const quantity = events.reduce((sum, e) => sum + parseFloat(e.quantity.toString()), 0);
+  if (!meter) {
+    const err = new Error('Meter not found');
+    err.status = 404;
+    throw err;
+  }
 
-  // Store aggregate
+  const aggregation = (meter.aggregation || 'SUM').toUpperCase();
+  const dateFrom = new Date(periodStart);
+  const dateTo = new Date(periodEnd);
+  const where = { organizationId, customerId, meterId, eventAt: { gte: dateFrom, lte: dateTo } };
+
+  let quantity;
+
+  if (aggregation === 'SUM') {
+    const agg = await prisma.usageEvent.aggregate({
+      where,
+      _sum: { quantity: true },
+    });
+    quantity = Number(agg._sum.quantity ?? 0);
+  } else if (aggregation === 'COUNT') {
+    quantity = await prisma.usageEvent.count({ where });
+  } else if (aggregation === 'MAX') {
+    const agg = await prisma.usageEvent.aggregate({
+      where,
+      _max: { quantity: true },
+    });
+    quantity = Number(agg._max.quantity ?? 0);
+  } else if (aggregation === 'LATEST') {
+    const latest = await prisma.usageEvent.findFirst({
+      where,
+      orderBy: { eventAt: 'desc' },
+      select: { quantity: true },
+    });
+    quantity = latest ? Number(latest.quantity) : 0;
+  } else {
+    // Fallback to SUM for unknown aggregation types
+    const agg = await prisma.usageEvent.aggregate({
+      where,
+      _sum: { quantity: true },
+    });
+    quantity = Number(agg._sum.quantity ?? 0);
+  }
+
   return repository.createOrUpdate(organizationId, {
     customerId,
     meterId,

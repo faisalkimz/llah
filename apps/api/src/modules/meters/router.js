@@ -1,140 +1,59 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.js';
+import { requireOrg } from '../../middleware/require-org.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
 
 const router = Router();
 
-/**
- * All routes require authentication
- */
 router.use(requireAuth);
+router.use(requireOrg);
 
-/**
- * POST /meters
- * Create a new meter
- */
 router.post('/', async (req, res, next) => {
   try {
     const data = validators.createMeterSchema.parse(req.body);
-    const organizationId = req.headers['x-organization-id'];
-    
-    if (!organizationId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_ORGANIZATION',
-          message: 'x-organization-id header is required',
-        },
-      });
-    }
-    
-    const meter = await service.createMeter(organizationId, data);
-    
+    const meter = await service.createMeter(req.organizationId, data);
     res.status(201).json({ data: meter });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * GET /meters
- * List meters with pagination and search
- */
 router.get('/', async (req, res, next) => {
   try {
-    const organizationId = req.headers['x-organization-id'];
-    
-    if (!organizationId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_ORGANIZATION',
-          message: 'x-organization-id header is required',
-        },
-      });
-    }
-    
     const params = validators.listMetersQuerySchema.parse(req.query);
-    const result = await service.listMeters(organizationId, params);
-    
+    const result = await service.listMeters(req.organizationId, params);
     res.json({ data: result });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * GET /meters/:id
- * Get a specific meter by ID
- */
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = validators.meterIdSchema.parse(req.params);
-    const organizationId = req.headers['x-organization-id'];
-    
-    if (!organizationId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_ORGANIZATION',
-          message: 'x-organization-id header is required',
-        },
-      });
-    }
-    
-    const meter = await service.getMeterWithStats(id, organizationId);
-    
+    const meter = await service.getMeterWithStats(id, req.organizationId);
     res.json({ data: meter });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * PATCH /meters/:id
- * Update a meter
- */
 router.patch('/:id', async (req, res, next) => {
   try {
     const { id } = validators.meterIdSchema.parse(req.params);
     const data = validators.updateMeterSchema.parse(req.body);
-    const organizationId = req.headers['x-organization-id'];
-    
-    if (!organizationId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_ORGANIZATION',
-          message: 'x-organization-id header is required',
-        },
-      });
-    }
-    
-    const meter = await service.updateMeter(id, organizationId, data);
-    
+    const meter = await service.updateMeter(id, req.organizationId, data);
     res.json({ data: meter });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * DELETE /meters/:id
- * Delete a meter
- */
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = validators.meterIdSchema.parse(req.params);
-    const organizationId = req.headers['x-organization-id'];
-    
-    if (!organizationId) {
-      return res.status(400).json({
-        error: {
-          code: 'MISSING_ORGANIZATION',
-          message: 'x-organization-id header is required',
-        },
-      });
-    }
-    
-    await service.deleteMeter(id, organizationId);
-    
+    await service.deleteMeter(id, req.organizationId);
     res.status(204).send();
   } catch (error) {
     next(error);
