@@ -67,9 +67,13 @@ export async function closeBillingPeriod(orgId, subscriptionId) {
           periodStart: subscription.currentPeriodStart.toISOString(),
           periodEnd: subscription.currentPeriodEnd.toISOString()
         });
-        usageByMeterId[price.meterId] = Number(agg.quantity ?? 0);
+        // agg.quantity may be a Number (Float schema) or BigInt (BigInt schema).
+        // Convert via String to avoid Number() precision loss above MAX_SAFE_INTEGER,
+        // then floor-truncate by dropping any decimal portion before passing to BigInt.
+        const rawQty = agg.quantity ?? 0;
+        usageByMeterId[price.meterId] = BigInt(String(rawQty).split('.')[0] || '0');
       } catch {
-        usageByMeterId[price.meterId] = 0;
+        usageByMeterId[price.meterId] = BigInt(0);
       }
     }
   }
@@ -78,16 +82,17 @@ export async function closeBillingPeriod(orgId, subscriptionId) {
   const lines = subscription.plan.items.map((item) => {
     const price = item.price;
     const isMetered = !!price.meter;
-    const quantity = isMetered ? (usageByMeterId[price.meterId] ?? 0) : 1;
+    // quantity is BigInt for metered prices, Number (1) for flat prices
+    const quantity = isMetered ? (usageByMeterId[price.meterId] ?? BigInt(0)) : BigInt(1);
     const unitAmountMinor = price.unitAmountMinor != null ? BigInt(price.unitAmountMinor) : BigInt(0);
     return {
       description: price.product
         ? `${price.product.name} — ${price.name}`
         : price.name,
-      quantity,
+      quantity: Number(quantity),
       unitAmountMinor,
-      // amountMinor = floor(quantity) * unitAmountMinor  (integer only)
-      amountMinor: BigInt(Math.floor(quantity)) * unitAmountMinor
+      // amountMinor = quantity * unitAmountMinor  (all BigInt arithmetic)
+      amountMinor: quantity * unitAmountMinor
     };
   });
 

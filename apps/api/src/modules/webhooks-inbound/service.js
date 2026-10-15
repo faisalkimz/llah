@@ -137,8 +137,6 @@ function verifyPayPalSignature(rawBody, headers) {
 
   // Construct the message PayPal signs:
   // "<transmissionId>|<transmissionTime>|<webhookId>|<crc32_of_body>"
-  const crc = crypto.createHash('crc32').update(rawBody).digest('hex');
-  // Note: Node doesn't natively support CRC32 as a hash; use a simple integer CRC32 approach
   const crc32val = crc32(rawBody);
   const message = `${transmissionId}|${transmissionTime}|${webhookId}|${crc32val}`;
 

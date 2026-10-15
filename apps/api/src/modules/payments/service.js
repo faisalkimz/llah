@@ -1,9 +1,12 @@
 import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
 
-// Valid status transitions. SUCCEEDED and FAILED are terminal.
+// Valid status transitions.
+// SUCCEEDED can transition to REFUNDED / PARTIALLY_REFUNDED (via the refund pipeline).
+// FAILED is terminal.
 const VALID_TRANSITIONS = {
-  PENDING: ['SUCCEEDED', 'FAILED']
+  PENDING: ['SUCCEEDED', 'FAILED'],
+  SUCCEEDED: ['REFUNDED', 'PARTIALLY_REFUNDED']
 };
 
 function isValidTransition(from, to) {
