@@ -433,3 +433,25 @@ model JobRun {
 
   @@index([jobName, startedAt])
 }
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Coupon {
+  id              String       @id @default(cuid())
+  orgId           String
+  code            String
+  discountType    DiscountType
+  discountValue   Int
+  maxRedemptions  Int?
+  redemptionCount Int          @default(0)
+  expiresAt       DateTime?
+  active          Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([orgId, code])
+  @@map("coupons")
+}

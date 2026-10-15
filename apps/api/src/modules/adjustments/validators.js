@@ -2,9 +2,11 @@ import { z } from 'zod';
 
 export const createAdjustmentSchema = z.object({
   customerId: z.string().min(1),
-  type: z.enum(['DEBIT', 'CREDIT']),
+  invoiceId: z.string().min(1).optional(),
+  type: z.enum(['CREDIT', 'DEBIT']),
   currency: z.string().length(3).toUpperCase().default('USD'),
-  amountMinor: z.number().int().positive(),
+  // amountMinor must be a non-zero integer (validated further in service)
+  amountMinor: z.number().int().refine((v) => v !== 0, { message: 'amountMinor must not be zero' }),
   reason: z.string().min(1),
   referenceType: z.string().nullable().optional(),
   referenceId: z.string().nullable().optional(),

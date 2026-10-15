@@ -41,4 +41,13 @@ router.get('/:refundId', async (req, res) => {
   }
 });
 
+router.post('/:refundId/process', async (req, res) => {
+  try {
+    const refund = await service.processRefund(req.params.refundId);
+    return res.json({ data: refund });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+  }
+});
+
 export default router;
