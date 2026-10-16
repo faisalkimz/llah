@@ -89,10 +89,14 @@ export async function findLastInvoiceNumber(organizationId) {
 
 /**
  * Add a credit line to an existing invoice and update its totalMinor.
+ * When a Prisma transaction client (tx) is provided, runs within that
+ * transaction; otherwise opens its own transaction.
  */
-export async function addCreditLine(invoiceId, organizationId, { description, amountToApplyMinor }) {
-  return await prisma.$transaction(async (tx) => {
-    const invoice = await tx.invoice.findFirst({
+export async function addCreditLine(invoiceId, organizationId, { description, amountToApplyMinor }, tx) {
+  const client = tx ?? prisma;
+
+  const run = async (client) => {
+    const invoice = await client.invoice.findFirst({
       where: { id: invoiceId, organizationId }
     });
     if (!invoice) {
@@ -102,7 +106,7 @@ export async function addCreditLine(invoiceId, organizationId, { description, am
     }
 
     // Create credit line (negative amount)
-    await tx.invoiceLine.create({
+    await client.invoiceLine.create({
       data: {
         invoiceId,
         description,
@@ -114,10 +118,18 @@ export async function addCreditLine(invoiceId, organizationId, { description, am
 
     // Update invoice totalMinor
     const newTotal = BigInt(invoice.totalMinor) - BigInt(amountToApplyMinor);
-    return await tx.invoice.update({
+    return await client.invoice.update({
       where: { id: invoiceId },
       data: { totalMinor: newTotal },
       include: { customer: true, lines: true, payments: true }
     });
-  });
+  };
+
+  // If a tx was passed in, run directly (already inside a transaction)
+  if (tx) {
+    return await run(tx);
+  }
+
+  // Otherwise open our own transaction
+  return await prisma.$transaction(async (innerTx) => run(innerTx));
 }

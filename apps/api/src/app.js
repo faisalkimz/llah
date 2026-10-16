@@ -20,7 +20,11 @@ app.use(rateLimit({ windowMs: 60_000, limit: 300 }));
 app.use('/v1/webhooks-inbound', express.raw({ type: '*/*', limit: '1mb' }), (req, _res, next) => {
   if (Buffer.isBuffer(req.body)) {
     req.rawBody = req.body.toString('utf8');
-    req.body = JSON.parse(req.rawBody || '{}');
+    try {
+      req.body = JSON.parse(req.rawBody || '{}');
+    } catch {
+      req.body = {};
+    }
   }
   next();
 });

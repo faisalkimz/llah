@@ -57,3 +57,17 @@ export async function updatePayment(paymentId, organizationId, data) {
     }
   });
 }
+
+/**
+ * Same as updatePayment but accepts a Prisma transaction client (tx).
+ * Use this inside a prisma.$transaction block.
+ */
+export async function updatePaymentTx(tx, paymentId, organizationId, data) {
+  return await tx.payment.update({
+    where: { id: paymentId, organizationId },
+    data,
+    include: {
+      invoice: true
+    }
+  });
+}

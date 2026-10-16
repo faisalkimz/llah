@@ -156,8 +156,8 @@ export async function processRefund(refundId, organizationId) {
     throw err;
   }
 
-  if (existing.status === 'SUCCEEDED') {
-    const err = new Error('Refund is already in SUCCEEDED state');
+  if (existing.status !== 'PENDING') {
+    const err = new Error(`Refund cannot be processed from ${existing.status} state; must be PENDING`);
     err.status = 422;
     throw err;
   }

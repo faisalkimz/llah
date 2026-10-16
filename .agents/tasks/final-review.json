@@ -1,0 +1,41 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "HIGH",
+      "label": "Credit apply non-atomicity",
+      "description": "applyCreditToInvoice in credits/service.js calls repo.decrementCreditGrant and invoicesRepo.addCreditLine in two separate non-transactional calls. A crash between them silently decrements the credit balance with no matching invoice line.",
+      "action": "Wrap decrementCreditGrant, addCreditLine, and createLedgerEntry in a single prisma.$transaction."
+    },
+    {
+      "id": 2,
+      "severity": "HIGH",
+      "label": "Payment-invoice reconciliation race",
+      "description": "updatePayment in payments/service.js reads invoice.amountPaidMinor, computes the new balance, and writes it back outside a transaction. Concurrent SUCCEEDED transitions for payments on the same invoice overwrite each other's contribution.",
+      "action": "Move the invoice.findFirst + invoice.update block inside a prisma.$transaction that also wraps repo.updatePayment, or use Prisma's increment operator."
+    },
+    {
+      "id": 3,
+      "severity": "HIGH",
+      "label": "processRefund accepts FAILED refunds",
+      "description": "processRefund in refunds/service.js only guards against existing.status === 'SUCCEEDED'. A FAILED refund passes through and advances to SUCCEEDED, incorrectly updating the parent payment status to REFUNDED or PARTIALLY_REFUNDED.",
+      "action": "Change the guard to: if (existing.status !== 'PENDING') throw."
+    },
+    {
+      "id": 4,
+      "severity": "HIGH",
+      "label": "Webhook signature bypass in production",
+      "description": "verifyStripeSignature and verifyPayPalSignature return true when STRIPE_WEBHOOK_SECRET / PAYPAL_WEBHOOK_ID are absent. The env schema marks both optional with no production guard, so a production deployment missing these secrets silently accepts any webhook as authentic.",
+      "action": "Require both secrets when NODE_ENV === 'production', or throw inside the bypass branch when running in production."
+    },
+    {
+      "id": 5,
+      "severity": "MEDIUM",
+      "label": "Raw-body middleware throws on non-JSON payloads",
+      "description": "app.js line 23 calls JSON.parse(req.rawBody || '{}') without try/catch in the middleware pipeline. A non-JSON webhook body throws a SyntaxError before the router's error handler, producing an unhandled 500.",
+      "action": "Wrap the JSON.parse call in try/catch and default req.body to {} on failure."
+    }
+  ],
+  "reviewDoc": "c:\\Users\\Coding-Kimz\\Desktop\\crazy\\llah\\.agents\\tasks\\final-review.md"
+}

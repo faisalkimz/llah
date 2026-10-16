@@ -63,28 +63,32 @@ export async function updatePayment(paymentId, organizationId, updates) {
     }
   }
 
-  // Apply the payment update
-  const updated = await repo.updatePayment(paymentId, organizationId, updates);
+  // Apply the payment update and reconcile invoice atomically
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await repo.updatePaymentTx(tx, paymentId, organizationId, updates);
 
-  // Reconcile invoice when payment succeeds
-  if (status === 'SUCCEEDED' && payment.invoiceId) {
-    const invoice = await prisma.invoice.findFirst({
-      where: { id: payment.invoiceId, organizationId }
-    });
-
-    if (invoice) {
-      const newAmountPaid = BigInt(invoice.amountPaidMinor) + BigInt(payment.amountMinor);
-      const isPaid = newAmountPaid >= BigInt(invoice.totalMinor);
-
-      await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: {
-          amountPaidMinor: newAmountPaid,
-          ...(isPaid ? { status: 'PAID', paidAt: new Date() } : {})
-        }
+    // Reconcile invoice when payment succeeds
+    if (status === 'SUCCEEDED' && payment.invoiceId) {
+      const invoice = await tx.invoice.findFirst({
+        where: { id: payment.invoiceId, organizationId }
       });
+
+      if (invoice) {
+        const newAmountPaid = BigInt(invoice.amountPaidMinor) + BigInt(payment.amountMinor);
+        const isPaid = newAmountPaid >= BigInt(invoice.totalMinor);
+
+        await tx.invoice.update({
+          where: { id: invoice.id },
+          data: {
+            amountPaidMinor: newAmountPaid,
+            ...(isPaid ? { status: 'PAID', paidAt: new Date() } : {})
+          }
+        });
+      }
     }
-  }
+
+    return result;
+  });
 
   return updated;
 }
