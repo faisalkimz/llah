@@ -104,6 +104,10 @@ model Organization {
   ledgerEntries    LedgerEntry[]
   webhookEndpoints WebhookEndpoint[]
   auditEvents      AuditEvent[]
+  taxRates         TaxRate[]
+  reports          Report[]
+  alertRules       AlertRule[]
+  notifications    Notification[]
 }
 
 model Membership {
@@ -397,6 +401,8 @@ model WebhookDelivery {
   eventType      String
   eventId        String
   attempt        Int             @default(1)
+  status         String          @default("PENDING")
+  payload        Json?
   responseStatus Int?
   deliveredAt    DateTime?
   nextAttemptAt  DateTime?
@@ -447,6 +453,48 @@ enum DiscountType {
   FIXED_AMOUNT
 }
 
+enum ReportType {
+  INVOICE_SUMMARY
+  REVENUE_SUMMARY
+  SUBSCRIPTION_SUMMARY
+  USAGE_SUMMARY
+  TAX_SUMMARY
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AlertMetric {
+  USAGE_AMOUNT
+  INVOICE_OVERDUE_DAYS
+  PAYMENT_FAILURE_COUNT
+  MRR_DROP_PERCENT
+}
+
+enum AlertOperator {
+  GT
+  GTE
+  LT
+  LTE
+}
+
+enum NotificationType {
+  INVOICE_CREATED
+  INVOICE_PAID
+  INVOICE_OVERDUE
+  PAYMENT_FAILED
+  SUBSCRIPTION_CANCELED
+  SUBSCRIPTION_RENEWED
+  ALERT_FIRED
+  CREDIT_APPLIED
+  REFUND_ISSUED
+  SYSTEM
+}
+
 model Coupon {
   id              String       @id @default(cuid())
   orgId           String
@@ -462,4 +510,75 @@ model Coupon {
 
   @@unique([orgId, code])
   @@map("coupons")
+}
+
+model TaxRate {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  rate           Decimal
+  country        String
+  region         String?
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, country])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  organizationId String
+  type           ReportType
+  status         ReportStatus @default(PENDING)
+  parameters     Json?
+  result         Json?
+  fileUrl        String?
+  generatedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, type])
+}
+
+model AlertRule {
+  id             String        @id @default(cuid())
+  organizationId String
+  name           String
+  metric         AlertMetric
+  threshold      Decimal
+  operator       AlertOperator @default(GT)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  firings        AlertFiring[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model AlertFiring {
+  id          String    @id @default(cuid())
+  alertRuleId String
+  value       Decimal
+  firedAt     DateTime  @default(now())
+  resolvedAt  DateTime?
+  alertRule   AlertRule @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String?
+  type           NotificationType
+  title          String
+  message        String
+  read           Boolean          @default(false)
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, read])
+  @@index([organizationId, userId])
 }
