@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Modules 23 (reports), 24 (alerts), 25 (notifications), 26 (developer). These four modules share no owned cross-dependencies on each other, so they are batched into one FEAT. Reports and alerts both call the revenue service from FEAT-001, so FEAT-001 must be committed first. Notifications is self-contained (its own model). Developer is read-only across existing models.",
+  "status": "completed",
+  "steps": [
+    "1. Create apps/api/src/modules/reports/validators.js: export createReportSchema ({ type: enum of 5 ReportType values, parameters: record optional }), reportIdSchema ({ id: cuid }).",
+    "2. Create apps/api/src/modules/reports/service.js: import prisma, import * as revenueService from '../revenue/service.js'. Implement createReport(orgId, data) — prisma.report.create with status PENDING, then await generateReport(report.id, orgId), return final report; generateReport(reportId, orgId) — update status to PROCESSING, switch on report.type: INVOICE_SUMMARY (count by status, sum totalMinor), REVENUE_SUMMARY (call revenueService.getRevenueStats), SUBSCRIPTION_SUMMARY (count by status), USAGE_SUMMARY (sum UsageAggregate.quantity groupBy meterId), TAX_SUMMARY (sum taxMinor on PAID invoices); on success update status=COMPLETED result=jsonPayload generatedAt=new Date(); on catch update status=FAILED re-throw; listReports(orgId) — findMany orderBy createdAt desc; getReport(id, orgId) — findFirst with 404; deleteReport(id, orgId) — delete.",
+    "3. Replace apps/api/src/modules/reports/router.js entirely: router.use(requireOrg). Wire GET /, POST / (201), GET /:id, DELETE /:id (204).",
+    "4. Create apps/api/src/modules/alerts/validators.js: export createAlertRuleSchema ({ name, metric: enum AlertMetric, threshold number, operator: enum AlertOperator default GT, active? }), updateAlertRuleSchema (partial), alertRuleIdSchema, firingIdSchema.",
+    "5. Create apps/api/src/modules/alerts/service.js: import prisma, import * as revenueService from '../revenue/service.js'. Implement createAlertRule/listAlertRules/getAlertRule/updateAlertRule/deleteAlertRule as standard CRUD on prisma.alertRule scoped by organizationId. Implement evaluateAlerts(orgId): fetch all active alertRules for org, for each compute current metric value (USAGE_AMOUNT: sum latest UsageAggregate.quantity; INVOICE_OVERDUE_DAYS: find oldest OPEN invoice with dueAt < now, compute days; PAYMENT_FAILURE_COUNT: count Payment{status:FAILED} last 30 days; MRR_DROP_PERCENT: getMRR now and approximate prior via canceled subs), compare value vs threshold using operator (GT: value>threshold, GTE: value>=threshold, LT: value<threshold, LTE: value<=threshold), if fired and no existing unresolved AlertFiring for this rule: prisma.alertFiring.create({alertRuleId, value:currentValue}). Return {evaluated, fired}. Implement listFirings(orgId, filters) — prisma.alertFiring.findMany where alertRule.organizationId=orgId. Implement resolveFiring(firingId, orgId) — findFirst (join through alertRule.organizationId), set resolvedAt=new Date().",
+    "6. Replace apps/api/src/modules/alerts/router.js entirely: router.use(requireOrg). Wire GET /, POST / (201), GET /:id, PATCH /:id, DELETE /:id (204), POST /evaluate, GET /firings, POST /firings/:id/resolve. IMPORTANT: define static routes (/evaluate, /firings) BEFORE /:id to prevent Express matching 'evaluate' or 'firings' as an id parameter.",
+    "7. Create apps/api/src/modules/notifications/validators.js: const notifTypes array of 10 NotificationType string values. export createNotificationSchema, listNotificationsQuerySchema ({ userId? cuid, read? 'true'|'false' transform to boolean, type? enum, limit? coerce int default 20, offset? coerce int default 0 }), notifIdSchema.",
+    "8. Create apps/api/src/modules/notifications/service.js: import prisma. Implement createNotification(orgId, data), listNotifications(orgId, filters) — build where from non-null filters, take/skip, orderBy createdAt desc; getNotification(id, orgId) — 404; markAsRead(id, orgId) — update read=true; markAllAsRead(orgId, userId?) — updateMany where organizationId+read=false+(userId if present); deleteNotification(id, orgId); getUnreadCount(orgId, userId?) — count where read=false.",
+    "9. Replace apps/api/src/modules/notifications/router.js entirely: router.use(requireOrg). Wire GET /, GET /unread-count, POST / (201), GET /:id, PATCH /:id/read, POST /read-all, DELETE /:id (204). Define static paths (/unread-count, /read-all) BEFORE /:id.",
+    "10. Create apps/api/src/modules/developer/validators.js: export apiStatsQuerySchema ({ from datetime, to datetime }).",
+    "11. Create apps/api/src/modules/developer/service.js: import prisma. Implement getDeveloperOverview(orgId) — parallel: apiKey count (status ACTIVE), usageEvent count, last 5 auditEvents orderBy createdAt desc; return { apiKeyCount, totalUsageEvents, recentEvents, testMode: false }. Implement getApiStats(orgId, { from, to }) — count UsageEvents in range, count ApiKeys with lastUsedAt in range; return { usageEventCount, activeApiKeyCount }. Implement getWebhookStats(orgId) — prisma.webhookDelivery.groupBy({ by:['status'], where:{ endpoint:{ organizationId:orgId } }, _count:{ id:true } }), reduce to { total, succeeded, failed, pending }.",
+    "12. Replace apps/api/src/modules/developer/router.js entirely: router.use(requireOrg). Wire GET /overview, GET /api-stats, GET /webhook-stats."
+  ],
+  "acceptance_criteria": [
+    "node --input-type=module --eval \"import './src/modules/reports/router.js'\" exits 0 from apps/api/",
+    "node --input-type=module --eval \"import './src/modules/alerts/router.js'\" exits 0 from apps/api/",
+    "node --input-type=module --eval \"import './src/modules/notifications/router.js'\" exits 0 from apps/api/",
+    "node --input-type=module --eval \"import './src/modules/developer/router.js'\" exits 0 from apps/api/",
+    "POST /v1/reports returns 201 with { data: { id, type, status: 'COMPLETED', result: {...} } }",
+    "POST /v1/alerts/evaluate returns { data: { evaluated: N, fired: M } } without throwing",
+    "GET /v1/notifications/unread-count returns { data: { count: N } }",
+    "GET /v1/developer/overview returns { data: { apiKeyCount, totalUsageEvents, recentEvents, testMode: false } }"
+  ],
+  "verification": [
+    "cd apps/api && node --input-type=module --eval \"import './src/modules/reports/router.js'\"",
+    "cd apps/api && node --input-type=module --eval \"import './src/modules/alerts/router.js'\"",
+    "cd apps/api && node --input-type=module --eval \"import './src/modules/notifications/router.js'\"",
+    "cd apps/api && node --input-type=module --eval \"import './src/modules/developer/router.js'\"",
+    "cd apps/api && npm run test"
+  ],
+  "blocked_reason": null,
+  "findings": "All four routers (reports, alerts, notifications, developer) import cleanly with exit 0. Test suite failures (28 tests in auth/service.test.js) are pre-existing DB connection errors unrelated to FEAT-002 — no database is available in this environment. Static route ordering applied in alerts (/evaluate, /firings before /:id) and notifications (/unread-count, /read-all before /:id). BigInt values serialized to string in reports result JSON to avoid JSON serialization errors."
+}
