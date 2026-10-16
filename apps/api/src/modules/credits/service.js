@@ -1,7 +1,6 @@
 import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
 import * as invoicesRepo from '../invoices/repository.js';
-import * as ledgerRepo from '../ledger/repository.js';
 
 export async function createCreditGrant(organizationId, grantData) {
   const { amountMinor, expiresAt } = grantData;
@@ -108,25 +107,39 @@ export async function applyCreditToInvoice(organizationId, creditGrantId, invoic
     throw err;
   }
 
-  // Decrement credit grant
-  await repo.decrementCreditGrant(creditGrantId, amountToApplyMinor);
+  // All three side-effects run in a single atomic transaction.
+  // A crash between any two would otherwise leave the credit balance
+  // decremented with no matching invoice line (silent money loss).
+  const updatedInvoice = await prisma.$transaction(async (tx) => {
+    // 1. Decrement credit grant balance
+    await tx.creditGrant.update({
+      where: { id: creditGrantId },
+      data: { remainingMinor: { decrement: applyAmount } }
+    });
 
-  // Add credit line to invoice and reduce totalMinor
-  const updatedInvoice = await invoicesRepo.addCreditLine(invoiceId, organizationId, {
-    description: `Credit applied from grant ${creditGrantId}`,
-    amountToApplyMinor
-  });
+    // 2. Add credit line to invoice and reduce totalMinor (pass tx so it runs in same tx)
+    const updated = await invoicesRepo.addCreditLine(
+      invoiceId,
+      organizationId,
+      { description: `Credit applied from grant ${creditGrantId}`, amountToApplyMinor },
+      tx
+    );
 
-  // Post ledger entry
-  await ledgerRepo.createLedgerEntry({
-    organizationId,
-    customerId: invoice.customerId,
-    type: 'CREDIT',
-    currency: invoice.currency ?? 'USD',
-    amountMinor: applyAmount,
-    referenceType: 'Invoice',
-    referenceId: invoiceId,
-    description: `Credit grant ${creditGrantId} applied to invoice ${invoice.number ?? invoiceId}`
+    // 3. Post ledger entry
+    await tx.ledgerEntry.create({
+      data: {
+        organizationId,
+        customerId: invoice.customerId,
+        type: 'CREDIT',
+        currency: invoice.currency ?? 'USD',
+        amountMinor: applyAmount,
+        referenceType: 'Invoice',
+        referenceId: invoiceId,
+        description: `Credit grant ${creditGrantId} applied to invoice ${invoice.number ?? invoiceId}`
+      }
+    });
+
+    return updated;
   });
 
   return updatedInvoice;

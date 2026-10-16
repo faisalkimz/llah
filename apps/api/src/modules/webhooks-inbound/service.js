@@ -19,7 +19,11 @@ const processedPayPalEventIds = new Set();
 function verifyStripeSignature(rawBody, signatureHeader) {
   const secret = env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
-    // No secret configured — skip verification (dev/test only)
+    // In production, a missing secret is a configuration error — fail closed.
+    if (env.NODE_ENV === 'production') {
+      throw new Error('STRIPE_WEBHOOK_SECRET is required in production');
+    }
+    // Dev/test only: skip verification so local development works without Stripe credentials
     return true;
   }
 
@@ -123,7 +127,11 @@ export async function handleStripeWebhook(rawBody, signatureHeader) {
 function verifyPayPalSignature(rawBody, headers) {
   const webhookId = env.PAYPAL_WEBHOOK_ID;
   if (!webhookId) {
-    // No webhook ID configured — skip verification (dev/test only)
+    // In production, a missing webhook ID is a configuration error — fail closed.
+    if (env.NODE_ENV === 'production') {
+      throw new Error('PAYPAL_WEBHOOK_ID is required in production');
+    }
+    // Dev/test only: skip verification
     return true;
   }
 
