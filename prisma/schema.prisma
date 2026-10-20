@@ -591,7 +591,7 @@ model OrgSetting {
   id             String       @id @default(cuid())
   organizationId String
   key            String
-  value          String
+  value          Json
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -604,8 +604,10 @@ model SupportTicket {
   id             String       @id @default(cuid())
   organizationId String
   userId         String?
+  createdById    String?
+  assignedToId   String?
   subject        String
-  body           String
+  description    String
   status         String       @default("OPEN")
   priority       String       @default("NORMAL")
   resolvedAt     DateTime?

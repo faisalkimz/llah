@@ -87,11 +87,9 @@ export async function getOrgOverview(orgId) {
     _sum: { totalMinor: true },
   });
 
-  const totalRevenueMajor = revenueAgg._sum.totalMinor
-    ? Number(revenueAgg._sum.totalMinor) / 100
-    : 0;
+  const revenueMinor = revenueAgg._sum.totalMinor?.toString() ?? '0';
 
-  return { ...org, totalRevenueMajor };
+  return { ...org, revenueMinor };
 }
 
 /**

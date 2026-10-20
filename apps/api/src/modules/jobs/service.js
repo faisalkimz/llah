@@ -20,7 +20,7 @@ export async function runJob(jobName, fn, orgId) {
 
   try {
     const result = await fn();
-    await prisma.jobRun.update({
+    const updated = await prisma.jobRun.update({
       where: { id: run.id },
       data: {
         status: 'SUCCEEDED',
@@ -28,7 +28,7 @@ export async function runJob(jobName, fn, orgId) {
         details: result !== undefined ? { result } : undefined,
       },
     });
-    return result;
+    return updated;
   } catch (err) {
     await prisma.jobRun.update({
       where: { id: run.id },
