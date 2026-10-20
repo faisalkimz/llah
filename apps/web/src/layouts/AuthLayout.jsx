@@ -22,21 +22,21 @@ export default function AuthLayout({
     <div className="flex min-h-screen">
       {/* ═══ LEFT PANEL: Brand + Visual ═══ */}
       <div className="hidden lg:flex lg:w-[46%] relative overflow-hidden">
-        {/* Deep gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0c1222] via-[#111827] to-[#0c1222]"></div>
+        {/* Light blue gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#f0f9ff] via-[#e0f2fe] to-[#f0fdfa]"></div>
 
         {/* Floating particles */}
-        <FloatingParticles count={40} dark />
+        <FloatingParticles count={40} />
 
         {/* Subtle gradient accents */}
-        <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-sky-500/[0.06] rounded-full blur-[100px]" aria-hidden="true"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-cyan-500/[0.04] rounded-full blur-[80px]" aria-hidden="true"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-sky-400/[0.08] rounded-full blur-[100px]" aria-hidden="true"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-cyan-400/[0.06] rounded-full blur-[80px]" aria-hidden="true"></div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-10 xl:p-12 w-full">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 text-white group" id="auth-logo">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[12px] font-extrabold text-[#111827] transition-transform group-hover:scale-105 shadow-sm">
+          <Link to="/" className="flex items-center gap-2.5 text-ink group" id="auth-logo">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-[12px] font-extrabold text-white transition-transform group-hover:scale-105 shadow-sm">
               L
             </div>
             <span className="text-[16px] font-bold tracking-tight">Llah</span>
@@ -44,10 +44,10 @@ export default function AuthLayout({
 
           {/* Main content area */}
           <div className="flex-1 flex flex-col justify-center py-8 max-w-lg">
-            <h1 className="text-[28px] xl:text-[34px] font-extrabold text-white leading-[1.15] tracking-tight mb-3">
+            <h1 className="text-[28px] xl:text-[34px] font-extrabold text-ink leading-[1.15] tracking-tight mb-3">
               {brandHeadline}
             </h1>
-            <p className="text-[14px] xl:text-[15px] text-slate-400 leading-relaxed mb-8 max-w-md">
+            <p className="text-[14px] xl:text-[15px] text-muted leading-relaxed mb-8 max-w-md">
               {brandSubtitle}
             </p>
 
@@ -58,7 +58,7 @@ export default function AuthLayout({
           </div>
 
           {/* Footer */}
-          <div className="text-[11px] text-slate-500 font-medium">
+          <div className="text-[11px] text-muted font-medium">
             {brandFooter}
           </div>
         </div>
