@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -32,20 +32,35 @@
   .llah-card {
     @apply rounded border bg-white;
   }
-  
-  /* Grid background */
-  .grid-bg {
-    background-image: linear-gradient(to right, #e5e5e5 1px, transparent 1px),
-                      linear-gradient(to bottom, #e5e5e5 1px, transparent 1px);
-    background-size: 40px 40px;
+
+  /* ─── Hero mesh gradient background ─── */
+  @keyframes mesh-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.97); }
   }
-  
-  /* Thin border utility */
-  .border-thin {
-    border-width: 0.5px;
+  @keyframes mesh-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-25px, 25px) scale(1.03); }
+    66% { transform: translate(20px, -10px) scale(0.98); }
+  }
+  @keyframes mesh-drift-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(15px, 20px) scale(0.96); }
+    66% { transform: translate(-30px, -15px) scale(1.04); }
   }
 
-  /* Hero background animation */
+  .mesh-blob-1 {
+    animation: mesh-drift-1 20s ease-in-out infinite;
+  }
+  .mesh-blob-2 {
+    animation: mesh-drift-2 25s ease-in-out infinite;
+  }
+  .mesh-blob-3 {
+    animation: mesh-drift-3 22s ease-in-out infinite;
+  }
+
+  /* ─── Data flow animations ─── */
   .hero-grid-line {
     stroke-dasharray: 8 12;
   }
@@ -78,23 +93,30 @@
     animation: data-flow 2s linear infinite;
   }
 
-  /* Legal page formatting */
+  /* ─── Subtle shimmer for accent elements ─── */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .accent-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(2,132,199,0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 8s ease-in-out infinite;
+  }
+
+  /* ─── Legal page formatting ─── */
   .legal-content h2 {
     @apply text-xl font-semibold text-ink mt-10 mb-4;
   }
-
   .legal-content h3 {
     @apply text-base font-semibold text-ink mt-6 mb-3;
   }
-
   .legal-content p {
     @apply text-sm leading-relaxed text-muted mb-4;
   }
-
   .legal-content ul {
     @apply text-sm leading-relaxed text-muted mb-4 ml-5 list-disc;
   }
-
   .legal-content li {
     @apply mb-2;
   }
@@ -103,7 +125,11 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-grid-animate,
   .hero-node-pulse,
-  .hero-data-flow {
+  .hero-data-flow,
+  .mesh-blob-1,
+  .mesh-blob-2,
+  .mesh-blob-3,
+  .accent-shimmer {
     animation: none;
   }
 }
