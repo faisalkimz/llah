@@ -35,6 +35,7 @@ import Admin from './pages/Admin.jsx';
 import Organizations from './pages/Organizations.jsx';
 import CreateOrganization from './pages/CreateOrganization.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
+import BillingPeriods from './pages/BillingPeriods.jsx';
 
 const appPages = [
   ['/dashboard', Dashboard],
@@ -64,6 +65,7 @@ const appPages = [
   ['/audit', Audit],
   ['/settings', Settings],
   ['/admin', Admin],
+  ['/billing-periods', BillingPeriods],
   ['/sessions', Sessions],
   ['/verify-email', VerifyEmail]
 ];
