@@ -6,7 +6,9 @@ const groups = [
   ['Overview', [
     ['Dashboard', '/dashboard'],
     ['Usage', '/usage'],
-    ['Revenue', '/revenue']
+    ['Revenue', '/revenue'],
+    ['Reports', '/reports'],
+    ['Observability', '/observability'],
   ]],
   ['Billing', [
     ['Customers', '/customers'],
@@ -17,19 +19,29 @@ const groups = [
     ['Subscriptions', '/subscriptions'],
     ['Invoices', '/invoices'],
     ['Payments', '/payments'],
-    ['Credits', '/credits']
+    ['Credits', '/credits'],
+    ['Billing Periods', '/billing-periods'],
+    ['Adjustments', '/adjustments'],
+    ['Refunds', '/refunds'],
+    ['Coupons', '/coupons'],
+    ['Tax', '/tax'],
   ]],
   ['Developers', [
     ['API keys', '/api-keys'],
     ['Events', '/events'],
     ['Webhooks', '/webhooks'],
-    ['Developer tools', '/developer']
+    ['Developer tools', '/developer'],
+    ['Alerts', '/alerts'],
+    ['Notifications', '/notifications'],
+    ['Feature flags', '/feature-flags'],
+    ['Jobs', '/jobs'],
   ]],
   ['Workspace', [
     ['Organizations', '/organizations'],
     ['Audit log', '/audit'],
+    ['Team', '/team'],
     ['Settings', '/settings'],
-    ['Admin', '/admin']
+    ['Admin', '/admin'],
   ]]
 ];
 

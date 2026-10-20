@@ -36,6 +36,16 @@ import Organizations from './pages/Organizations.jsx';
 import CreateOrganization from './pages/CreateOrganization.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
 import BillingPeriods from './pages/BillingPeriods.jsx';
+import Adjustments from './pages/Adjustments.jsx';
+import Refunds from './pages/Refunds.jsx';
+import Coupons from './pages/Coupons.jsx';
+import Tax from './pages/Tax.jsx';
+import Reports from './pages/Reports.jsx';
+import Alerts from './pages/Alerts.jsx';
+import Notifications from './pages/Notifications.jsx';
+import Jobs from './pages/Jobs.jsx';
+import Observability from './pages/Observability.jsx';
+import FeatureFlags from './pages/FeatureFlags.jsx';
 
 const appPages = [
   ['/dashboard', Dashboard],
@@ -66,6 +76,16 @@ const appPages = [
   ['/settings', Settings],
   ['/admin', Admin],
   ['/billing-periods', BillingPeriods],
+  ['/adjustments', Adjustments],
+  ['/refunds', Refunds],
+  ['/coupons', Coupons],
+  ['/tax', Tax],
+  ['/reports', Reports],
+  ['/alerts', Alerts],
+  ['/notifications', Notifications],
+  ['/jobs', Jobs],
+  ['/observability', Observability],
+  ['/feature-flags', FeatureFlags],
   ['/sessions', Sessions],
   ['/verify-email', VerifyEmail]
 ];
