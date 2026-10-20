@@ -11,50 +11,96 @@ import ApiDemo from '../components/marketing/ApiDemo.jsx';
 import BillingLifecycle from '../components/marketing/BillingLifecycle.jsx';
 
 /* ═══════════════════════════════════════════════════
-   HERO MESH GRADIENT BACKGROUND
-   Organic flowing blobs with brand colors
+   HERO AURORA BACKGROUND
+   Animated flowing gradients, particles, and light trails
 ═══════════════════════════════════════════════════ */
-function HeroMeshBackground() {
+function HeroAuroraBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden="true" style={{ pointerEvents: 'none' }}>
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#f0f9ff] via-canvas to-canvas"></div>
+      {/* Deep base gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#f0f9ff] via-[#e0f2fe] to-[#f0fdfa]"></div>
 
-      {/* Mesh blobs */}
+      {/* ─── Large Aurora Blobs ─── */}
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="xMidYMid slice">
         <defs>
-          <filter id="mesh-blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="80" />
+          <filter id="aurora-blur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="70" />
           </filter>
-          <filter id="mesh-blur-lg" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="120" />
+          <filter id="aurora-blur-xl" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="100" />
           </filter>
+          <linearGradient id="sweep-grad" x1="0" y1="0" x2="1" y2="0.5">
+            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0" />
+            <stop offset="30%" stopColor="#0ea5e9" stopOpacity="0.15" />
+            <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.2" />
+            <stop offset="70%" stopColor="#0ea5e9" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="sweep-grad-2" x1="0" y1="0.5" x2="1" y2="0">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+            <stop offset="30%" stopColor="#06b6d4" stopOpacity="0.1" />
+            <stop offset="50%" stopColor="#10b981" stopOpacity="0.12" />
+            <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+          </linearGradient>
         </defs>
 
-        {/* Primary brand blob - top right */}
-        <ellipse cx="1050" cy="200" rx="400" ry="300" fill="#0ea5e9" opacity="0.12" filter="url(#mesh-blur)" className="mesh-blob-1" />
+        {/* Large flowing blobs */}
+        <ellipse cx="1100" cy="180" rx="450" ry="320" fill="#0ea5e9" opacity="0.18" filter="url(#aurora-blur)" className="aurora-blob-1" />
+        <ellipse cx="150" cy="350" rx="380" ry="280" fill="#06b6d4" opacity="0.12" filter="url(#aurora-blur-xl)" className="aurora-blob-2" />
+        <ellipse cx="750" cy="600" rx="500" ry="220" fill="#0284c7" opacity="0.10" filter="url(#aurora-blur-xl)" className="aurora-blob-3" />
+        <circle cx="350" cy="150" r="200" fill="#7dd3fc" opacity="0.14" filter="url(#aurora-blur)" className="aurora-blob-2" />
+        <circle cx="1200" cy="500" r="180" fill="#10b981" opacity="0.07" filter="url(#aurora-blur-xl)" className="aurora-blob-1" />
 
-        {/* Teal accent blob - center left */}
-        <ellipse cx="200" cy="400" rx="350" ry="250" fill="#06b6d4" opacity="0.08" filter="url(#mesh-blur-lg)" className="mesh-blob-2" />
+        {/* Sweeping light bands */}
+        <rect x="-200" y="100" width="600" height="250" rx="125" fill="url(#sweep-grad)" className="aurora-sweep" />
+        <rect x="-200" y="350" width="500" height="200" rx="100" fill="url(#sweep-grad-2)" className="aurora-sweep-delayed" />
 
-        {/* Warm accent blob - bottom center */}
-        <ellipse cx="720" cy="650" rx="500" ry="200" fill="#0284c7" opacity="0.06" filter="url(#mesh-blur-lg)" className="mesh-blob-3" />
+        {/* Flowing wave curves */}
+        <path d="M0 450 Q200 380 400 420 Q600 460 800 400 Q1000 340 1200 380 Q1400 420 1600 360" stroke="#0ea5e9" strokeWidth="1" fill="none" opacity="0.15" className="wave-path" />
+        <path d="M0 500 Q250 440 500 480 Q750 520 1000 460 Q1250 400 1500 440" stroke="#06b6d4" strokeWidth="0.8" fill="none" opacity="0.12" className="wave-path-slow" />
+        <path d="M0 320 Q300 280 600 310 Q900 340 1200 290 Q1500 240 1800 280" stroke="#7dd3fc" strokeWidth="0.6" fill="none" opacity="0.1" className="wave-path" style={{ animationDelay: '2s' }} />
 
-        {/* Small highlight spot */}
-        <circle cx="900" cy="150" r="120" fill="#7dd3fc" opacity="0.1" filter="url(#mesh-blur)" className="mesh-blob-2" />
+        {/* Expanding pulse rings from center */}
+        <circle cx="720" cy="350" r="80" fill="none" stroke="#0ea5e9" strokeWidth="0.5" opacity="0.2" className="ring-expand" />
+        <circle cx="720" cy="350" r="80" fill="none" stroke="#06b6d4" strokeWidth="0.5" opacity="0.15" className="ring-expand" style={{ animationDelay: '2s' }} />
 
-        {/* Very subtle green accent */}
-        <circle cx="400" cy="200" r="150" fill="#10b981" opacity="0.04" filter="url(#mesh-blur-lg)" className="mesh-blob-3" />
+        {/* Orbiting glow */}
+        <g style={{ transformOrigin: '720px 350px' }}>
+          <circle cx="720" cy="350" r="0" fill="transparent">
+            <animateTransform attributeName="transform" type="rotate" from="0 720 350" to="360 720 350" dur="25s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="840" cy="350" r="4" fill="#0ea5e9" opacity="0.4" filter="url(#aurora-blur)">
+            <animateTransform attributeName="transform" type="rotate" from="0 720 350" to="360 720 350" dur="25s" repeatCount="indefinite" />
+          </circle>
+        </g>
+
+        {/* Floating particles */}
+        {[
+          { cx: 200, cy: 600, delay: '0s', dur: '5s' },
+          { cx: 500, cy: 700, delay: '1s', dur: '6s' },
+          { cx: 800, cy: 650, delay: '2s', dur: '5.5s' },
+          { cx: 1100, cy: 700, delay: '0.5s', dur: '7s' },
+          { cx: 350, cy: 750, delay: '3s', dur: '6s' },
+          { cx: 1000, cy: 600, delay: '1.5s', dur: '5s' },
+        ].map((p, i) => (
+          <circle key={i} cx={p.cx} cy={p.cy} r="1.5" fill="#0ea5e9" opacity="0">
+            <animate attributeName="opacity" values="0;0.6;0.6;0" dur={p.dur} begin={p.delay} repeatCount="indefinite" />
+            <animate attributeName="cy" values={`${p.cy};${p.cy - 200}`} dur={p.dur} begin={p.delay} repeatCount="indefinite" />
+            <animate attributeName="cx" values={`${p.cx};${p.cx + 25}`} dur={p.dur} begin={p.delay} repeatCount="indefinite" />
+            <animate attributeName="r" values="1.5;0.8" dur={p.dur} begin={p.delay} repeatCount="indefinite" />
+          </circle>
+        ))}
       </svg>
 
-      {/* Fine dot grid overlay */}
-      <div className="absolute inset-0 opacity-[0.25]" style={{
+      {/* Fine dot grid overlay for texture */}
+      <div className="absolute inset-0 opacity-[0.18]" style={{
         backgroundImage: 'radial-gradient(circle, #94a3b8 0.5px, transparent 0.5px)',
-        backgroundSize: '24px 24px'
+        backgroundSize: '28px 28px'
       }}></div>
 
-      {/* Bottom fade to next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent"></div>
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent"></div>
     </div>
   );
 }
@@ -214,7 +260,7 @@ export default function Landing() {
 
       {/* ═══ HERO — Mesh Gradient + Product Scene ═══ */}
       <section className="relative overflow-hidden">
-        <HeroMeshBackground />
+        <HeroAuroraBackground />
 
         <div className="relative mx-auto max-w-7xl px-6 pt-16 lg:px-8 lg:pt-24">
           <div className="mx-auto max-w-3xl text-center">
