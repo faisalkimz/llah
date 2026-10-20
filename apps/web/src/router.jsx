@@ -8,6 +8,8 @@ import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 import Sessions from './pages/Sessions.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import Terms from './pages/Terms.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Usage from './pages/Usage.jsx';
 import Revenue from './pages/Revenue.jsx';
@@ -96,6 +98,8 @@ export const router = createBrowserRouter([
   { path: '/register', element: <Register /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/reset-password', element: <ResetPassword /> },
+  { path: '/privacy', element: <PrivacyPolicy /> },
+  { path: '/terms', element: <Terms /> },
   {
     element: (
       <ProtectedRoute>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { api } from '../lib/api.js';
+import { api, friendlyError } from '../lib/api.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.jsx';
 
@@ -26,7 +26,9 @@ export default function Register() {
       console.log('Register response:', response);
 
       if (!response.success) {
-        throw new Error(response.error.message);
+        setError(response.error.message);
+        setLoading(false);
+        return;
       }
 
       const { user, tokens } = response.data;
@@ -44,7 +46,7 @@ export default function Register() {
       nav('/dashboard');
     } catch (e) {
       console.error('Registration error:', e);
-      setError(e.message);
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export default function Register() {
               Start billing smarter in minutes
             </h1>
             <p className="text-lg text-neutral-300 leading-relaxed mb-8">
-              Join thousands of companies automating their usage-based billing with Llah.
+              Set up usage tracking, configure pricing, and start sending invoices.
             </p>
 
             {/* Getting Started Illustration */}
@@ -139,7 +141,7 @@ export default function Register() {
 
           {/* Footer */}
           <div className="text-xs text-neutral-400">
-            Trusted by leading SaaS, AI, and API companies worldwide
+            Metered billing for SaaS, AI, and API businesses
           </div>
         </div>
       </div>
@@ -248,9 +250,9 @@ export default function Register() {
             {/* Terms */}
             <p className="text-xs text-center text-muted">
               By signing up, you agree to our{' '}
-              <a href="#" className="text-ink hover:underline">Terms of Service</a>
+              <Link to="/terms" className="text-ink hover:underline">Terms of Service</Link>
               {' '}and{' '}
-              <a href="#" className="text-ink hover:underline">Privacy Policy</a>
+              <Link to="/privacy" className="text-ink hover:underline">Privacy Policy</Link>
             </p>
 
             {/* Divider */}
@@ -284,13 +286,13 @@ export default function Register() {
                 ← Back to home
               </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/privacy" className="hover:text-ink transition-colors">
                 Privacy
-              </a>
+              </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/terms" className="hover:text-ink transition-colors">
                 Terms
-              </a>
+              </Link>
             </div>
           </div>
         </div>

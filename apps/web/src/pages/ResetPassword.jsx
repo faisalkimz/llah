@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
+import { api, friendlyError } from '../lib/api.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.jsx';
 
@@ -47,7 +47,7 @@ export default function ResetPassword() {
       setSuccess(true);
       setTimeout(() => nav('/login'), 3000);
     } catch (e) {
-      setError(e.message);
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -289,13 +289,13 @@ export default function ResetPassword() {
                 ← Back to home
               </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/privacy" className="hover:text-ink transition-colors">
                 Privacy
-              </a>
+              </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/terms" className="hover:text-ink transition-colors">
                 Terms
-              </a>
+              </Link>
             </div>
           </div>
         </div>

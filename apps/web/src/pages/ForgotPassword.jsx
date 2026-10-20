@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/api.js';
+import { api, friendlyError } from '../lib/api.js';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -26,7 +26,7 @@ export default function ForgotPassword() {
         setResetToken(data.token);
       }
     } catch (e) {
-      setError(e.message);
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -257,13 +257,13 @@ export default function ForgotPassword() {
                 ← Back to home
               </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/privacy" className="hover:text-ink transition-colors">
                 Privacy
-              </a>
+              </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/terms" className="hover:text-ink transition-colors">
                 Terms
-              </a>
+              </Link>
             </div>
           </div>
         </div>

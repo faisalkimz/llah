@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { api } from '../lib/api.js';
+import { api, friendlyError } from '../lib/api.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 export default function Login() {
@@ -23,7 +23,9 @@ export default function Login() {
       });
 
       if (!response.success) {
-        throw new Error(response.error.message);
+        setError(response.error.message);
+        setLoading(false);
+        return;
       }
 
       const { user, tokens } = response.data;
@@ -40,7 +42,7 @@ export default function Login() {
       
       nav('/dashboard');
     } catch (e) {
-      setError(e.message);
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -102,26 +104,32 @@ export default function Login() {
               </svg>
             </div>
 
-            {/* Stats */}
-            <div className="mt-8 grid grid-cols-3 gap-6">
-              <div>
-                <div className="text-2xl font-bold text-white">$2.4B+</div>
-                <div className="text-xs text-neutral-400 mt-1">Processed</div>
+            {/* Capabilities */}
+            <div className="mt-8 space-y-3">
+              <div className="flex items-center gap-3 text-white/80">
+                <svg className="h-4 w-4 flex-shrink-0 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm">Real-time usage event ingestion</span>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-white">1.2B+</div>
-                <div className="text-xs text-neutral-400 mt-1">Events/day</div>
+              <div className="flex items-center gap-3 text-white/80">
+                <svg className="h-4 w-4 flex-shrink-0 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm">Automated invoicing and ledger</span>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-white">99.99%</div>
-                <div className="text-xs text-neutral-400 mt-1">Uptime</div>
+              <div className="flex items-center gap-3 text-white/80">
+                <svg className="h-4 w-4 flex-shrink-0 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm">Flexible pricing models</span>
               </div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-xs text-neutral-400">
-            Trusted by leading SaaS, AI, and API companies worldwide
+            Metered billing for SaaS, AI, and API businesses
           </div>
         </div>
       </div>
@@ -247,13 +255,13 @@ export default function Login() {
                 ← Back to home
               </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/privacy" className="hover:text-ink transition-colors">
                 Privacy
-              </a>
+              </Link>
               <span>·</span>
-              <a href="#" className="hover:text-ink transition-colors">
+              <Link to="/terms" className="hover:text-ink transition-colors">
                 Terms
-              </a>
+              </Link>
             </div>
           </div>
         </div>

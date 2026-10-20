@@ -1,128 +1,184 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import {
+  Zap, DollarSign, FileText, BarChart3, Shield, Code2,
+  ArrowRight, Check, ChevronRight, Menu, X,
+  Activity, Layers, CreditCard, Bell, Key, Users
+} from 'lucide-react';
 
-// Animated Code Block Component
-function AnimatedCode({ lines = [], delay = 50 }) {
-  const [displayedLines, setDisplayedLines] = useState([]);
-  const [isComplete, setIsComplete] = useState(false);
-  
-  useEffect(() => {
-    if (!lines || lines.length === 0) return;
-    
-    // Reset when lines change
-    setDisplayedLines([]);
-    setIsComplete(false);
-    
-    let currentLine = 0;
-    const interval = setInterval(() => {
-      if (currentLine < lines.length) {
-        setDisplayedLines(prev => [...prev, lines[currentLine]]);
-        currentLine++;
-      } else {
-        setIsComplete(true);
-        clearInterval(interval);
-      }
-    }, delay * 10);
-    
-    return () => clearInterval(interval);
-  }, [lines, delay]);
-  
+/* ─── Hero Background ─── */
+function HeroBackground() {
   return (
-    <div className="rounded-lg border border-line bg-[#1e1e1e] p-4 font-mono text-sm">
-      {displayedLines.map((line, idx) => (
-        <div key={idx} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-          {line?.type === 'comment' && <span className="text-[#6a9955]">{line.text}</span>}
-          {line?.type === 'code' && (
-            <span>
-              <span className="text-[#569cd6]">{line.keyword}</span>
-              <span className="text-[#dcdcaa]">{line.method}</span>
-              <span className="text-[#d4d4d4]">{line.rest}</span>
-            </span>
+    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1200 700"
+        fill="none"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        {/* Fine grid */}
+        <defs>
+          <pattern id="heroGrid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <line x1="60" y1="0" x2="60" y2="60" stroke="#e5e5e5" strokeWidth="0.5" />
+            <line x1="0" y1="60" x2="60" y2="60" stroke="#e5e5e5" strokeWidth="0.5" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#heroGrid)" opacity="0.5" />
+
+        {/* Horizontal flow lines */}
+        <line x1="0" y1="180" x2="1200" y2="180" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" />
+        <line x1="0" y1="360" x2="1200" y2="360" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" style={{ animationDelay: '2s' }} />
+        <line x1="0" y1="540" x2="1200" y2="540" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" style={{ animationDelay: '4s' }} />
+
+        {/* Vertical flow lines */}
+        <line x1="300" y1="0" x2="300" y2="700" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" style={{ animationDelay: '1s' }} />
+        <line x1="600" y1="0" x2="600" y2="700" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" style={{ animationDelay: '3s' }} />
+        <line x1="900" y1="0" x2="900" y2="700" stroke="#d4d4d4" strokeWidth="0.5" className="hero-grid-line hero-grid-animate" style={{ animationDelay: '5s' }} />
+
+        {/* Infrastructure nodes */}
+        <circle cx="300" cy="180" r="4" fill="#171717" opacity="0.12" className="hero-node-pulse" />
+        <circle cx="600" cy="360" r="5" fill="#0284c7" opacity="0.18" className="hero-node-pulse" style={{ animationDelay: '1s' }} />
+        <circle cx="900" cy="180" r="4" fill="#171717" opacity="0.12" className="hero-node-pulse" style={{ animationDelay: '2s' }} />
+        <circle cx="300" cy="540" r="3" fill="#171717" opacity="0.10" className="hero-node-pulse" style={{ animationDelay: '1.5s' }} />
+        <circle cx="900" cy="540" r="4" fill="#0284c7" opacity="0.14" className="hero-node-pulse" style={{ animationDelay: '0.5s' }} />
+
+        {/* Connection paths between nodes */}
+        <path d="M300 180 Q450 270 600 360" stroke="#0284c7" strokeWidth="1" fill="none" opacity="0.12" className="hero-data-flow" />
+        <path d="M600 360 Q750 270 900 180" stroke="#0284c7" strokeWidth="1" fill="none" opacity="0.12" className="hero-data-flow" style={{ animationDelay: '1s' }} />
+        <path d="M300 540 Q450 450 600 360" stroke="#171717" strokeWidth="1" fill="none" opacity="0.08" className="hero-data-flow" style={{ animationDelay: '2s' }} />
+        <path d="M600 360 Q750 450 900 540" stroke="#171717" strokeWidth="1" fill="none" opacity="0.08" className="hero-data-flow" style={{ animationDelay: '3s' }} />
+
+        {/* Fade edges */}
+        <defs>
+          <linearGradient id="fadeLeft" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#fafafa" stopOpacity="1" />
+            <stop offset="100%" stopColor="#fafafa" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="fadeRight" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#fafafa" stopOpacity="0" />
+            <stop offset="100%" stopColor="#fafafa" stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id="fadeBottom" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fafafa" stopOpacity="0" />
+            <stop offset="100%" stopColor="#fafafa" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="120" height="700" fill="url(#fadeLeft)" />
+        <rect x="1080" y="0" width="120" height="700" fill="url(#fadeRight)" />
+        <rect x="0" y="560" width="1200" height="140" fill="url(#fadeBottom)" />
+      </svg>
+    </div>
+  );
+}
+
+/* ─── Code Block ─── */
+function CodeBlock() {
+  const lines = [
+    { cls: 'text-[#6a9955]', text: '// Ingest a usage event' },
+    { cls: 'text-[#d4d4d4]', text: '' },
+    { cls: '', parts: [
+      { cls: 'text-[#c586c0]', text: 'const ' },
+      { cls: 'text-[#9cdcfe]', text: 'event' },
+      { cls: 'text-[#d4d4d4]', text: ' = ' },
+      { cls: 'text-[#c586c0]', text: 'await ' },
+      { cls: 'text-[#dcdcaa]', text: 'llah' },
+      { cls: 'text-[#d4d4d4]', text: '.' },
+      { cls: 'text-[#dcdcaa]', text: 'events' },
+      { cls: 'text-[#d4d4d4]', text: '.' },
+      { cls: 'text-[#dcdcaa]', text: 'create' },
+      { cls: 'text-[#d4d4d4]', text: '({' },
+    ]},
+    { cls: '', parts: [
+      { cls: 'text-[#d4d4d4]', text: '  ' },
+      { cls: 'text-[#9cdcfe]', text: 'customer_id' },
+      { cls: 'text-[#d4d4d4]', text: ': ' },
+      { cls: 'text-[#ce9178]', text: '"cus_8a3f2b"' },
+      { cls: 'text-[#d4d4d4]', text: ',' },
+    ]},
+    { cls: '', parts: [
+      { cls: 'text-[#d4d4d4]', text: '  ' },
+      { cls: 'text-[#9cdcfe]', text: 'meter' },
+      { cls: 'text-[#d4d4d4]', text: ': ' },
+      { cls: 'text-[#ce9178]', text: '"api_requests"' },
+      { cls: 'text-[#d4d4d4]', text: ',' },
+    ]},
+    { cls: '', parts: [
+      { cls: 'text-[#d4d4d4]', text: '  ' },
+      { cls: 'text-[#9cdcfe]', text: 'value' },
+      { cls: 'text-[#d4d4d4]', text: ': ' },
+      { cls: 'text-[#b5cea8]', text: '1' },
+      { cls: 'text-[#d4d4d4]', text: ',' },
+    ]},
+    { cls: '', parts: [
+      { cls: 'text-[#d4d4d4]', text: '  ' },
+      { cls: 'text-[#9cdcfe]', text: 'idempotency_key' },
+      { cls: 'text-[#d4d4d4]', text: ': ' },
+      { cls: 'text-[#ce9178]', text: '"evt_unique_001"' },
+    ]},
+    { cls: 'text-[#d4d4d4]', text: '});' },
+  ];
+
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-[#1e1e1e] p-5 font-mono text-[13px] leading-relaxed">
+      <div className="mb-3 flex items-center gap-1.5">
+        <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]"></div>
+        <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]"></div>
+        <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]"></div>
+        <span className="ml-2 text-[11px] text-neutral-500">ingest.js</span>
+      </div>
+      {lines.map((line, i) => (
+        <div key={i}>
+          {line.parts ? (
+            line.parts.map((p, j) => (
+              <span key={j} className={p.cls}>{p.text}</span>
+            ))
+          ) : (
+            <span className={line.cls}>{line.text || '\u00A0'}</span>
           )}
         </div>
       ))}
-      {!isComplete && <span className="inline-block h-4 w-2 animate-pulse bg-white"></span>}
     </div>
   );
 }
 
-// Live Metrics Component
-function LiveMetrics() {
-  const [metrics, setMetrics] = useState({
-    events: 1247891,
-    revenue: 124450,
-    customers: 2847
-  });
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        events: prev.events + Math.floor(Math.random() * 100),
-        revenue: prev.revenue + Math.floor(Math.random() * 50),
-        customers: prev.customers + (Math.random() > 0.95 ? 1 : 0)
-      }));
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="rounded-lg border border-line bg-white p-4">
-        <div className="text-xs font-medium text-muted">Events/sec</div>
-        <div className="mt-1 text-2xl font-bold text-ink transition-all duration-300">
-          {metrics.events.toLocaleString()}
-        </div>
-        <div className="mt-1 text-xs text-success">↑ Live</div>
-      </div>
-      <div className="rounded-lg border border-line bg-white p-4">
-        <div className="text-xs font-medium text-muted">Revenue</div>
-        <div className="mt-1 text-2xl font-bold text-ink transition-all duration-300">
-          ${metrics.revenue.toLocaleString()}
-        </div>
-        <div className="mt-1 text-xs text-success">↑ 12.5%</div>
-      </div>
-      <div className="rounded-lg border border-line bg-white p-4">
-        <div className="text-xs font-medium text-muted">Customers</div>
-        <div className="mt-1 text-2xl font-bold text-ink transition-all duration-300">
-          {metrics.customers.toLocaleString()}
-        </div>
-        <div className="mt-1 text-xs text-success">↑ 8.2%</div>
-      </div>
-    </div>
-  );
-}
+/* ─── How It Works Diagram ─── */
+function HowItWorks() {
+  const steps = [
+    { icon: Key, label: 'Create API key', desc: 'Authenticate with your workspace' },
+    { icon: Activity, label: 'Send events', desc: 'Track usage with the events API' },
+    { icon: Layers, label: 'Configure pricing', desc: 'Attach meters to pricing rules' },
+    { icon: FileText, label: 'Generate invoices', desc: 'Automated billing each period' },
+  ];
 
-// Animated Graph Component
-function AnimatedGraph() {
-  const [bars, setBars] = useState([40, 60, 45, 75, 55, 85, 70, 90, 80, 95, 88, 100]);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBars(prev => prev.map(h => Math.max(20, Math.min(100, h + (Math.random() - 0.5) * 10))));
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
   return (
-    <div className="flex h-48 w-full items-end gap-2 rounded-lg bg-white p-4">
-      {bars.map((height, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-t transition-all duration-1000 ease-in-out"
-          style={{ 
-            height: `${height}%`,
-            background: 'linear-gradient(to top, #0284c7, #0ea5e9)'
-          }}
-        ></div>
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {steps.map((step, i) => (
+        <div key={i} className="relative">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-line bg-white">
+              <step.icon className="h-4.5 w-4.5 text-ink" size={18} strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted mb-1">Step {i + 1}</div>
+              <div className="text-[15px] font-semibold text-ink">{step.label}</div>
+              <p className="mt-1 text-[13px] leading-relaxed text-muted">{step.desc}</p>
+            </div>
+          </div>
+          {i < steps.length - 1 && (
+            <div className="hidden lg:block absolute top-5 -right-3">
+              <ChevronRight className="h-4 w-4 text-line" />
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );
 }
 
+/* ─── Main Landing ─── */
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -130,464 +186,514 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const codeExample = [
-    { type: 'comment', text: '// Track usage events in real-time' },
-    { type: 'code', keyword: 'await ', method: 'llah.events.', rest: 'create({' },
-    { type: 'code', keyword: '  ', method: 'customer_id', rest: ': "cus_abc123",' },
-    { type: 'code', keyword: '  ', method: 'event_name', rest: ': "api_call",' },
-    { type: 'code', keyword: '  ', method: 'value', rest: ': 1,' },
-    { type: 'code', keyword: '  ', method: 'timestamp', rest: ': Date.now()' },
-    { type: 'code', keyword: '', method: '});', rest: '' },
+  const features = [
+    {
+      icon: Zap,
+      title: 'Real-time event ingestion',
+      description: 'Send usage events via REST API with idempotency keys. Events are validated, deduplicated, and stored with full audit history.'
+    },
+    {
+      icon: DollarSign,
+      title: 'Flexible pricing models',
+      description: 'Configure flat-rate, per-unit, tiered, volume, and graduated pricing. Attach pricing rules to meters and products.'
+    },
+    {
+      icon: FileText,
+      title: 'Automated invoicing',
+      description: 'Close billing periods, aggregate usage, and generate immutable ledger entries and invoices automatically.'
+    },
+    {
+      icon: BarChart3,
+      title: 'Revenue analytics',
+      description: 'Track revenue, usage trends, and customer health across your workspace with exportable reports.'
+    },
+    {
+      icon: Shield,
+      title: 'Audit trail and RBAC',
+      description: 'Role-based access control, full audit logging, and session management built into every workspace.'
+    },
+    {
+      icon: Code2,
+      title: 'Developer-first API',
+      description: 'RESTful API with consistent conventions, webhook delivery, API key management, and structured event logs.'
+    },
+  ];
+
+  const audiences = [
+    {
+      icon: Code2,
+      title: 'SaaS platforms',
+      desc: 'Bill customers based on API calls, storage, compute time, or any custom metric your product tracks.'
+    },
+    {
+      icon: Zap,
+      title: 'AI and ML companies',
+      desc: 'Meter token usage, model inference calls, or GPU time. Price per unit or in graduated tiers.'
+    },
+    {
+      icon: Layers,
+      title: 'API businesses',
+      desc: 'Track request volume per endpoint. Apply rate limits and pricing tiers directly to your API usage data.'
+    },
+    {
+      icon: CreditCard,
+      title: 'Infrastructure providers',
+      desc: 'Measure resource consumption across services. Consolidate billing for complex multi-product setups.'
+    },
   ];
 
   return (
     <div className="min-h-screen bg-canvas">
-      {/* Navigation - Sticky with blur */}
+      {/* ─── Navigation ─── */}
       <nav className={`sticky top-0 z-50 border-b transition-all duration-200 ${
         scrolled ? 'border-line bg-canvas/80 backdrop-blur-xl' : 'border-transparent bg-canvas'
       }`}>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
+            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70" id="nav-logo">
               <div className="flex h-6 w-6 items-center justify-center rounded bg-ink text-[10px] font-bold text-white">
                 L
               </div>
               <span className="text-sm font-semibold tracking-tight text-ink">Llah</span>
             </Link>
 
-            {/* Nav Links - Desktop */}
+            {/* Desktop nav links */}
             <div className="hidden items-center gap-6 md:flex">
-              <a href="#features" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">
-                Features
-              </a>
-              <a href="#pricing" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">
-                Pricing
-              </a>
-              <a href="#customers" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">
-                Customers
-              </a>
-              <a href="#docs" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">
-                Docs
-              </a>
+              <a href="#platform" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">Platform</a>
+              <a href="#developers" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">Developers</a>
+              <a href="#pricing" className="text-[13px] font-medium text-muted transition-colors hover:text-ink">Pricing</a>
             </div>
 
-            {/* Auth Buttons */}
-            <div className="flex items-center gap-2">
+            {/* Auth buttons */}
+            <div className="hidden items-center gap-2 md:flex">
               <Link
                 to="/login"
-                className="rounded px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-white"
+                className="rounded-full px-4 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-neutral-100"
+                id="nav-signin"
               >
                 Sign in
               </Link>
               <Link
                 to="/register"
-                className="rounded bg-ink px-3 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                className="rounded-full bg-ink px-4 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                id="nav-get-started"
               >
                 Get started
               </Link>
             </div>
+
+            {/* Mobile menu button */}
+            <button
+              className="flex items-center justify-center rounded p-1.5 text-ink md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+              id="nav-mobile-toggle"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
+
+          {/* Mobile menu */}
+          {mobileMenuOpen && (
+            <div className="border-t border-line pb-4 pt-3 md:hidden">
+              <div className="flex flex-col gap-2">
+                <a href="#platform" className="rounded px-3 py-2 text-sm text-muted hover:bg-neutral-100 hover:text-ink" onClick={() => setMobileMenuOpen(false)}>Platform</a>
+                <a href="#developers" className="rounded px-3 py-2 text-sm text-muted hover:bg-neutral-100 hover:text-ink" onClick={() => setMobileMenuOpen(false)}>Developers</a>
+                <a href="#pricing" className="rounded px-3 py-2 text-sm text-muted hover:bg-neutral-100 hover:text-ink" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+                <div className="mt-2 flex flex-col gap-2 border-t border-line pt-3">
+                  <Link to="/login" className="rounded px-3 py-2 text-sm font-medium text-ink hover:bg-neutral-100">Sign in</Link>
+                  <Link to="/register" className="rounded bg-ink px-3 py-2 text-center text-sm font-medium text-white">Get started</Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section with Grid Background */}
+      {/* ─── Hero Section ─── */}
       <section className="relative overflow-hidden border-b border-line">
-        {/* Grid background */}
-        <div className="absolute inset-0 grid-bg opacity-40"></div>
-        
-        <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-20 lg:px-8 lg:pb-32 lg:pt-28">
-          <div className="mx-auto max-w-4xl text-center">
-            {/* Badge with pulse */}
-            <div className="animate-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[11px] font-medium tracking-wide text-muted shadow-sm">
+        <HeroBackground />
+        <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-16 lg:px-8 lg:pb-28 lg:pt-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[11px] font-medium tracking-wide text-muted">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success"></span>
               </span>
-              NOW IN PUBLIC BETA
+              NOW IN BETA
             </div>
 
-            {/* Main Headline - Larger, bolder */}
-            <h1 className="animate-fade-up text-[56px] font-bold leading-[1.05] tracking-[-0.04em] text-ink lg:text-[72px]" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
-              Infrastructure for
-              <br />
-              modern monetization
+            <h1 className="text-[44px] font-bold leading-[1.08] tracking-[-0.035em] text-ink sm:text-[56px] lg:text-[64px]">
+              Metered billing{' '}
+              <br className="hidden sm:block" />
+              for usage-based{' '}
+              <br className="hidden sm:block" />
+              businesses
             </h1>
 
-            {/* Subheadline */}
-            <p className="animate-fade-up mx-auto mt-6 max-w-2xl text-[18px] leading-relaxed text-muted" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
-              Usage-based billing for AI, API, and SaaS. Track usage in real-time, price flexibly, and automate revenue operations—all in one platform.
+            <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-muted sm:text-[17px]">
+              Llah handles event ingestion, usage aggregation, flexible pricing, subscriptions, invoicing, and revenue operations so you can focus on your product.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="animate-fade-up mt-10 flex items-center justify-center gap-3" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 to="/register"
-                className="group inline-flex items-center gap-2 rounded-md bg-ink px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-ink/90 hover:shadow-md"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-2.5 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-ink/90 sm:w-auto"
+                id="hero-cta-primary"
               >
                 Start building free
-                <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
-                href="#demo"
-                className="inline-flex items-center gap-2 rounded-md border border-line bg-white px-5 py-2.5 text-[14px] font-semibold text-ink shadow-sm transition-all hover:bg-canvas hover:shadow-md"
+                href="#platform"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-line bg-white px-6 py-2.5 text-[14px] font-semibold text-ink shadow-sm transition-all hover:bg-canvas sm:w-auto"
+                id="hero-cta-secondary"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Watch demo
+                See how it works
               </a>
             </div>
 
-            {/* Trust signals */}
-            <div className="animate-fade-up mt-10 flex items-center justify-center gap-6 text-[12px] text-muted" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-muted">
               <div className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+                <Check className="h-3.5 w-3.5 text-success" strokeWidth={3} />
                 Free to start
               </div>
               <div className="h-3 w-px bg-line"></div>
               <div className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                No credit card
+                <Check className="h-3.5 w-3.5 text-success" strokeWidth={3} />
+                No credit card required
               </div>
               <div className="h-3 w-px bg-line"></div>
               <div className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                14-day trial
+                <Check className="h-3.5 w-3.5 text-success" strokeWidth={3} />
+                REST API
               </div>
-            </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="animate-fade-up mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3" style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}>
-            <div className="rounded-lg border border-line bg-white p-6 text-center shadow-sm transition-all hover:shadow-md">
-              <div className="text-[32px] font-bold tracking-tight text-ink">$2.4B+</div>
-              <div className="mt-1 text-[13px] text-muted">Revenue processed</div>
-            </div>
-            <div className="rounded-lg border border-line bg-white p-6 text-center shadow-sm transition-all hover:shadow-md">
-              <div className="text-[32px] font-bold tracking-tight text-ink">1.2B+</div>
-              <div className="mt-1 text-[13px] text-muted">Events per day</div>
-            </div>
-            <div className="rounded-lg border border-line bg-white p-6 text-center shadow-sm transition-all hover:shadow-md">
-              <div className="text-[32px] font-bold tracking-tight text-ink">99.99%</div>
-              <div className="mt-1 text-[13px] text-muted">Uptime SLA</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Live Demo Section - NEW */}
-      <section className="border-b border-line bg-white py-24">
+      {/* ─── Platform Overview ─── */}
+      <section id="platform" className="border-b border-line bg-white py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-brand-600">LIVE DEMO</div>
-            <h2 className="text-[40px] font-bold leading-tight tracking-tight text-ink">
-              See it in action
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">Platform</div>
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+              Everything between your product and getting paid
             </h2>
-            <p className="mt-4 text-[16px] leading-relaxed text-muted">
-              Real-time metering, automated invoicing, and revenue analytics—all working together.
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">
+              From the first usage event to the final invoice line item, Llah provides the complete billing stack for metered and subscription-based pricing.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 lg:grid-cols-2">
-            {/* Code Example */}
-            <div>
-              <div className="mb-4 text-[14px] font-semibold text-ink">Track usage with one API call</div>
-              <AnimatedCode lines={codeExample} />
-              <div className="mt-4 flex items-center gap-2 text-[12px] text-muted">
-                <div className="flex h-2 w-2 animate-pulse rounded-full bg-success"></div>
-                Event ingested in 23ms
-              </div>
-            </div>
-
-            {/* Live Dashboard */}
-            <div>
-              <div className="mb-4 text-[14px] font-semibold text-ink">Watch metrics update live</div>
-              <LiveMetrics />
-              <div className="mt-4">
-                <div className="rounded-lg border border-line bg-canvas p-4">
-                  <div className="mb-3 text-[12px] font-medium text-muted">Revenue over time</div>
-                  <AnimatedGraph />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof - Customer Logos */}
-      <section id="customers" className="border-b border-line bg-canvas py-12">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <p className="text-center text-[12px] font-medium uppercase tracking-wider text-muted">
-            TRUSTED BY MODERN SAAS COMPANIES
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0">
-            {['OpenAI', 'Stripe', 'Vercel', 'Linear', 'Notion', 'Figma'].map((company) => (
-              <div key={company} className="text-[18px] font-bold text-ink transition-transform hover:scale-110">{company}</div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section - Clean Grid */}
-      <section id="features" className="border-b border-line bg-white py-24">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-brand-600">PLATFORM</div>
-            <h2 className="text-[40px] font-bold leading-tight tracking-tight text-ink">
-              Ship pricing as fast as you ship product
-            </h2>
-            <p className="mt-4 text-[16px] leading-relaxed text-muted">
-              From metering to invoicing, we handle the complexity so you can focus on building.
-            </p>
-          </div>
-
-          {/* Feature Grid - 2x3 */}
-          <div className="mt-16 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                ),
-                title: 'Real-time metering',
-                description: 'Ingest millions of events per second with guaranteed accuracy and idempotency.'
-              },
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ),
-                title: 'Flexible pricing models',
-                description: 'Support flat, per-unit, tiered, volume, and graduated pricing. Mix and match.'
-              },
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                ),
-                title: 'Automated invoicing',
-                description: 'Generate and send invoices automatically. Customizable templates and schedules.'
-              },
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                ),
-                title: 'Revenue analytics',
-                description: 'Track MRR, ARR, churn, and cohorts in real-time with exportable reports.'
-              },
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                ),
-                title: 'Enterprise security',
-                description: 'SOC 2 compliant. Role-based access, audit logs, SSO, and encryption.'
-              },
-              {
-                icon: (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                  </svg>
-                ),
-                title: 'Developer APIs',
-                description: 'RESTful APIs, webhooks, SDKs, and docs. Built for developers, by developers.'
-              },
-            ].map((feature, idx) => (
-              <div key={idx} className="group bg-white p-8 transition-all hover:bg-canvas">
-                <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-md border border-line bg-canvas text-ink transition-all group-hover:border-ink group-hover:bg-ink group-hover:text-white">
-                  {feature.icon}
+          <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature, idx) => (
+              <div key={idx} className="group bg-white p-7 transition-colors hover:bg-canvas" id={`feature-${idx}`}>
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-canvas text-ink transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-white">
+                  <feature.icon size={17} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-[15px] font-semibold text-ink">{feature.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-muted">{feature.description}</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonial Section */}
-      <section className="border-b border-line bg-canvas py-24">
-        <div className="mx-auto max-w-5xl px-6 lg:px-8">
-          <div className="rounded-xl border border-line bg-white p-10 shadow-sm lg:p-12">
-            <div className="mb-6 text-[28px] font-medium leading-snug text-ink">
-              "Llah allows us to monitor credit usage, track customer health in real-time, and drive upsells at the right time—ensuring our customers get the most value while avoiding overages."
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-sm font-bold text-white">
-                P
+      {/* ─── How It Works ─── */}
+      <section className="border-b border-line bg-canvas py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">How it works</div>
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+              Four steps from integration to invoice
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">
+              Integrate the API, define your meters and pricing, and Llah handles the rest.
+            </p>
+          </div>
+          <div className="mt-14">
+            <HowItWorks />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Developer Experience ─── */}
+      <section id="developers" className="border-b border-line bg-white py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
+            <div>
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">For developers</div>
+              <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+                Built around a REST API you can integrate in an afternoon
+              </h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-muted">
+                Every resource in Llah is accessible through a consistent REST API. Create customers, define meters, send usage events, and query invoices programmatically.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                {[
+                  { icon: Key, text: 'Workspace-scoped API keys with configurable permissions' },
+                  { icon: Activity, text: 'Idempotent event ingestion with deduplication' },
+                  { icon: Bell, text: 'Outbound webhooks for billing lifecycle events' },
+                  { icon: FileText, text: 'Structured event logs and audit trail' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded border border-line bg-canvas">
+                      <item.icon size={13} className="text-ink" strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[14px] leading-relaxed text-ink">{item.text}</span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <div className="text-[14px] font-semibold text-ink">Peter Welinder</div>
-                <div className="text-[13px] text-muted">VP of Product, OpenAI</div>
+            </div>
+
+            <div className="lg:mt-8">
+              <CodeBlock />
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-muted">
+                <div className="h-1.5 w-1.5 rounded-full bg-success"></div>
+                Response: 201 Created
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section - Minimal */}
-      <section id="pricing" className="border-b border-line bg-white py-24">
+      {/* ─── Use Cases ─── */}
+      <section className="border-b border-line bg-canvas py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Header */}
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-brand-600">PRICING</div>
-            <h2 className="text-[40px] font-bold leading-tight tracking-tight text-ink">
-              Simple, transparent pricing
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">Use cases</div>
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+              Built for businesses that bill on usage
             </h2>
-            <p className="mt-4 text-[16px] text-muted">
-              Start free, scale as you grow. No hidden fees, ever.
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">
+              Whether you charge per API call, per token, per seat, or per gigabyte, Llah supports the pricing model your business needs.
             </p>
           </div>
 
-          {/* Pricing Cards */}
-          <div className="mt-16 grid gap-6 lg:grid-cols-3">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2">
+            {audiences.map((aud, i) => (
+              <div key={i} className="rounded-xl border border-line bg-white p-7 transition-all hover:shadow-sm" id={`usecase-${i}`}>
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-canvas">
+                  <aud.icon size={17} className="text-ink" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-[15px] font-semibold text-ink">{aud.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">{aud.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Security and Trust ─── */}
+      <section className="border-b border-line bg-white py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">Security</div>
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+              Financial-grade data handling
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">
+              Llah stores monetary values in integer minor units with deterministic arithmetic. Ledger entries are append-only. Every data mutation is recorded in the audit trail.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-3">
+            {[
+              { title: 'Append-only ledger', desc: 'Financial records are immutable. Corrections are handled through adjustments, credits, and refunds with full traceability.' },
+              { title: 'Role-based access', desc: 'Workspace members have scoped permissions. API keys are tied to workspaces with configurable access levels.' },
+              { title: 'Audit logging', desc: 'Every action in the platform is recorded. Sessions are tracked and revocable. Sensitive operations require authentication.' },
+            ].map((item, i) => (
+              <div key={i} className="text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-canvas">
+                  <Shield size={18} className="text-ink" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-[14px] font-semibold text-ink">{item.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Pricing Section ─── */}
+      <section id="pricing" className="border-b border-line bg-canvas py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-brand-600">Pricing</div>
+            <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[36px]">
+              Start free, scale when ready
+            </h2>
+            <p className="mt-4 text-[15px] text-muted">
+              No credit card required. Upgrade as your usage grows.
+            </p>
+          </div>
+
+          <div className="mt-14 grid gap-6 lg:grid-cols-3">
             {/* Starter */}
-            <div className="rounded-xl border border-line bg-white p-8 transition-all hover:shadow-lg">
+            <div className="rounded-xl border border-line bg-white p-7 transition-all hover:shadow-sm">
+              <div className="mb-5">
+                <h3 className="text-[15px] font-semibold text-ink">Starter</h3>
+                <p className="mt-1 text-[13px] text-muted">For testing and early development</p>
+              </div>
               <div className="mb-6">
-                <h3 className="text-[16px] font-semibold text-ink">Starter</h3>
-                <p className="mt-1 text-[13px] text-muted">For testing and MVPs</p>
+                <span className="text-[40px] font-bold tracking-tight text-ink">$0</span>
+                <span className="text-[13px] text-muted">/month</span>
               </div>
-              <div className="mb-8">
-                <span className="text-[48px] font-bold tracking-tight text-ink">$0</span>
-                <span className="text-[14px] text-muted">/month</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {['10K events/month', 'Unlimited customers', 'API access', 'Community support'].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-[14px]">
-                    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+              <ul className="mb-7 space-y-2.5">
+                {['10,000 events per month', 'Unlimited customers', 'REST API access', 'Community support'].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-[13px]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" strokeWidth={2.5} />
                     <span className="text-muted">{item}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 to="/register"
-                className="block w-full rounded-md border border-line bg-white py-2.5 text-center text-[14px] font-semibold text-ink transition-all hover:bg-canvas hover:shadow-sm"
+                className="block w-full rounded-full border border-line bg-white py-2.5 text-center text-[13px] font-semibold text-ink transition-all hover:bg-canvas"
+                id="pricing-starter-cta"
               >
                 Get started
               </Link>
             </div>
 
-            {/* Pro - Highlighted */}
-            <div className="relative rounded-xl border-2 border-ink bg-white p-8 shadow-lg transition-all hover:shadow-xl">
+            {/* Pro */}
+            <div className="relative rounded-xl border-2 border-ink bg-white p-7 shadow-sm">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-ink px-3 py-1 text-[11px] font-bold tracking-wide text-white">
-                  MOST POPULAR
+                <span className="rounded-full bg-ink px-3 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+                  Recommended
                 </span>
               </div>
+              <div className="mb-5">
+                <h3 className="text-[15px] font-semibold text-ink">Pro</h3>
+                <p className="mt-1 text-[13px] text-muted">For growing businesses</p>
+              </div>
               <div className="mb-6">
-                <h3 className="text-[16px] font-semibold text-ink">Pro</h3>
-                <p className="mt-1 text-[13px] text-muted">For growing companies</p>
+                <span className="text-[40px] font-bold tracking-tight text-ink">$99</span>
+                <span className="text-[13px] text-muted">/month</span>
               </div>
-              <div className="mb-8">
-                <span className="text-[48px] font-bold tracking-tight text-ink">$99</span>
-                <span className="text-[14px] text-muted">/month</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {['1M events/month', 'Advanced analytics', 'Priority support', 'Team collaboration', 'Custom reports'].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-[14px]">
-                    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+              <ul className="mb-7 space-y-2.5">
+                {['1M events per month', 'Advanced analytics', 'Priority support', 'Team collaboration', 'Custom reports'].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-[13px]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-ink" strokeWidth={2.5} />
                     <span className="text-ink">{item}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 to="/register"
-                className="block w-full rounded-md bg-ink py-2.5 text-center text-[14px] font-semibold text-white transition-all hover:bg-ink/90 hover:shadow-lg"
+                className="block w-full rounded-full bg-ink py-2.5 text-center text-[13px] font-semibold text-white transition-all hover:bg-ink/90"
+                id="pricing-pro-cta"
               >
                 Start free trial
               </Link>
             </div>
 
             {/* Enterprise */}
-            <div className="rounded-xl border border-line bg-white p-8 transition-all hover:shadow-lg">
+            <div className="rounded-xl border border-line bg-white p-7 transition-all hover:shadow-sm">
+              <div className="mb-5">
+                <h3 className="text-[15px] font-semibold text-ink">Enterprise</h3>
+                <p className="mt-1 text-[13px] text-muted">For large-scale operations</p>
+              </div>
               <div className="mb-6">
-                <h3 className="text-[16px] font-semibold text-ink">Enterprise</h3>
-                <p className="mt-1 text-[13px] text-muted">Custom solutions</p>
+                <span className="text-[40px] font-bold tracking-tight text-ink">Custom</span>
               </div>
-              <div className="mb-8">
-                <span className="text-[48px] font-bold tracking-tight text-ink">Custom</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {['Unlimited events', 'SSO & SAML', 'Dedicated support', 'SLA guarantee', 'Custom integrations'].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-[14px]">
-                    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+              <ul className="mb-7 space-y-2.5">
+                {['Unlimited events', 'SSO and SAML', 'Dedicated support', 'SLA available', 'Custom integrations'].map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-[13px]">
+                    <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" strokeWidth={2.5} />
                     <span className="text-muted">{item}</span>
                   </li>
                 ))}
               </ul>
-              <button className="block w-full rounded-md border border-line bg-white py-2.5 text-center text-[14px] font-semibold text-ink transition-all hover:bg-canvas hover:shadow-sm">
-                Contact sales
+              <button
+                className="block w-full rounded-full border border-line bg-white py-2.5 text-center text-[13px] font-semibold text-ink transition-all hover:bg-canvas"
+                id="pricing-enterprise-cta"
+              >
+                Contact us
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="border-b border-line bg-canvas py-24">
-        <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <h2 className="text-[44px] font-bold leading-tight tracking-tight text-ink">
-            Ready to modernize your billing?
+      {/* ─── Final CTA ─── */}
+      <section className="border-b border-line bg-white py-20 lg:py-24">
+        <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
+          <h2 className="text-[32px] font-bold leading-tight tracking-tight text-ink sm:text-[40px]">
+            Start billing for what your product actually delivers
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[17px] text-muted">
-            Join thousands of companies using Llah to power their usage-based billing.
+          <p className="mx-auto mt-4 max-w-lg text-[15px] text-muted">
+            Create an account, integrate the API, and have your first usage event tracked in minutes.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/register"
-              className="group inline-flex items-center gap-2 rounded-md bg-ink px-6 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-ink/90 hover:shadow-md"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-2.5 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-ink/90 sm:w-auto"
+              id="final-cta"
             >
-              Start building for free
-              <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+              Create free account
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a href="#docs" className="text-[14px] font-semibold text-ink transition-opacity hover:opacity-70">
-              View documentation →
-            </a>
+            <Link
+              to="/login"
+              className="text-[14px] font-semibold text-ink transition-opacity hover:opacity-70"
+            >
+              Sign in to existing account
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer - Minimal */}
-      <footer className="bg-white py-12">
+      {/* ─── Footer ─── */}
+      <footer className="bg-canvas py-12">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 border-t border-line pt-8 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-ink text-[10px] font-bold text-white">
-                L
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-5">
+            {/* Brand */}
+            <div className="col-span-2 sm:col-span-4 lg:col-span-1">
+              <div className="flex items-center gap-2">
+                <div className="flex h-5 w-5 items-center justify-center rounded bg-ink text-[9px] font-bold text-white">
+                  L
+                </div>
+                <span className="text-[13px] font-semibold text-ink">Llah</span>
               </div>
-              <span className="text-[13px] font-semibold text-ink">Llah</span>
+              <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-muted">
+                Metered billing and revenue operations for SaaS, AI, and API businesses.
+              </p>
             </div>
-            <div className="flex items-center gap-6">
-              <a href="#" className="text-[13px] text-muted transition-colors hover:text-ink">Twitter</a>
-              <a href="#" className="text-[13px] text-muted transition-colors hover:text-ink">GitHub</a>
-              <a href="#" className="text-[13px] text-muted transition-colors hover:text-ink">Docs</a>
+
+            {/* Product */}
+            <div>
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">Product</div>
+              <ul className="space-y-2">
+                <li><a href="#platform" className="text-[13px] text-muted transition-colors hover:text-ink">Platform</a></li>
+                <li><a href="#pricing" className="text-[13px] text-muted transition-colors hover:text-ink">Pricing</a></li>
+                <li><a href="#developers" className="text-[13px] text-muted transition-colors hover:text-ink">Developers</a></li>
+              </ul>
             </div>
-            <p className="text-[12px] text-muted">© 2026 Llah. All rights reserved.</p>
+
+            {/* Resources */}
+            <div>
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">Resources</div>
+              <ul className="space-y-2">
+                <li><Link to="/login" className="text-[13px] text-muted transition-colors hover:text-ink">Sign in</Link></li>
+                <li><Link to="/register" className="text-[13px] text-muted transition-colors hover:text-ink">Get started</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">Legal</div>
+              <ul className="space-y-2">
+                <li><Link to="/privacy" className="text-[13px] text-muted transition-colors hover:text-ink">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="text-[13px] text-muted transition-colors hover:text-ink">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-line pt-8 sm:flex-row">
+            <p className="text-[12px] text-muted">&copy; {new Date().getFullYear()} Llah. All rights reserved.</p>
           </div>
         </div>
       </footer>
