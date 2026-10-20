@@ -42,6 +42,7 @@ async function sessionTokens(user) {
 }
 
 export async function register(input) {
+  input.email = input.email.toLowerCase();
   const exists = await prisma.user.findUnique({ where: { email: input.email } });
   if (exists) {
     throw Object.assign(new Error('Email already in use.'), { status: 409, code: 'EMAIL_EXISTS' });
@@ -74,6 +75,7 @@ export async function register(input) {
 }
 
 export async function login(input) {
+  input.email = input.email.toLowerCase();
   const user = await prisma.user.findUnique({ where: { email: input.email } });
   if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
     throw Object.assign(new Error('Invalid email or password.'), { status: 401, code: 'INVALID_CREDENTIALS' });
@@ -205,7 +207,7 @@ export async function requestEmailVerification(userId) {
   return { 
     message: 'Verification email sent.',
     // Development only - remove in production
-    token: process.env.NODE_ENV === 'development' ? token : undefined
+    token: process.env.NODE_ENV !== 'production' ? token : undefined
   };
 }
 
@@ -250,7 +252,7 @@ export async function requestPasswordReset(input) {
   return { 
     message: 'If that email exists, a password reset link has been sent.',
     // Development only - remove in production
-    token: process.env.NODE_ENV === 'development' ? token : undefined
+    token: process.env.NODE_ENV !== 'production' ? token : undefined
   };
 }
 
@@ -285,8 +287,6 @@ export async function resetPassword(input) {
     where: { userId: stored.userId, revokedAt: null },
     data: { revokedAt: new Date() }
   });
-  
-  resetTokens.delete(input.token);
   
   return { success: true, message: 'Password reset successfully. All sessions have been logged out.' };
 }
