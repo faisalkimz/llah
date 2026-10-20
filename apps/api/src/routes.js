@@ -33,6 +33,7 @@ import supportRouter from './modules/support/router.js';
 import adminRouter from './modules/admin/router.js';
 import jobsRouter from './modules/jobs/router.js';
 import observabilityRouter from './modules/observability/router.js';
+import * as observabilityService from './modules/observability/service.js';
 import featureFlagsRouter from './modules/feature-flags/router.js';
 import settingsRouter from './modules/settings/router.js';
 import mobileRouter from './modules/mobile/router.js';
@@ -70,6 +71,14 @@ apiRouter.use('/audit',requireAuth,auditRouter);
 apiRouter.use('/support',requireAuth,supportRouter);
 apiRouter.use('/admin',requireAuth,adminRouter);
 apiRouter.use('/jobs',requireAuth,jobsRouter);
+apiRouter.get('/observability/health', async (req, res, next) => {
+  try {
+    const data = await observabilityService.healthCheck();
+    res.json({ data });
+  } catch (error) {
+    next(error);
+  }
+});
 apiRouter.use('/observability',requireAuth,observabilityRouter);
 apiRouter.use('/feature-flags',requireAuth,featureFlagsRouter);
 apiRouter.use('/settings',requireAuth,settingsRouter);

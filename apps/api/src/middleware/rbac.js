@@ -1,4 +1,5 @@
 import * as membershipRepository from '../modules/organizations/membership-repository.js';
+import { prisma } from '../lib/prisma.js';
 
 /**
  * RBAC (Role-Based Access Control) middleware
@@ -118,6 +119,30 @@ export function hasPermission(userRole, requiredRole) {
   const requiredLevel = ROLE_HIERARCHY[requiredRole] ?? 0;
   
   return userLevel >= requiredLevel;
+}
+
+/**
+ * Require user to have ADMIN or OWNER role in ANY organization
+ * Used for super-admin / cross-org access (admin module)
+ */
+export async function requireAdminAnywhere(req, res, next) {
+  try {
+    const membership = await prisma.membership.findFirst({
+      where: {
+        userId: req.user.id,
+        role: { in: ['ADMIN', 'OWNER'] },
+      },
+    });
+    if (!membership) {
+      return res.status(403).json({
+        error: { code: 'ADMIN_REQUIRED', message: 'Admin or Owner role required.' },
+      });
+    }
+    req.adminMembership = membership;
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
