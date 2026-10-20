@@ -1,7 +1,7 @@
 import prisma from '../../lib/prisma.js';
 import * as revenueService from '../revenue/service.js';
 
-async function generateReport(reportId, orgId, reportType) {
+export async function generateReport(reportId, orgId, reportType) {
   await prisma.report.update({
     where: { id: reportId },
     data: { status: 'PROCESSING' },
