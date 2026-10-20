@@ -9,6 +9,7 @@ import HeroScene from '../components/marketing/HeroScene.jsx';
 import InfrastructureDiagram from '../components/marketing/InfrastructureDiagram.jsx';
 import ApiDemo from '../components/marketing/ApiDemo.jsx';
 import BillingLifecycle from '../components/marketing/BillingLifecycle.jsx';
+import FloatingParticles from '../components/FloatingParticles.jsx';
 
 /* ═══════════════════════════════════════════════════
    HERO AURORA BACKGROUND
@@ -93,11 +94,8 @@ function HeroAuroraBackground() {
         ))}
       </svg>
 
-      {/* Fine dot grid overlay for texture */}
-      <div className="absolute inset-0 opacity-[0.18]" style={{
-        backgroundImage: 'radial-gradient(circle, #94a3b8 0.5px, transparent 0.5px)',
-        backgroundSize: '28px 28px'
-      }}></div>
+      {/* Floating particles */}
+      <FloatingParticles count={55} />
 
       {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white to-transparent"></div>
