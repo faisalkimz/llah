@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createHash } from 'node:crypto';
 
 vi.mock('../../lib/prisma.js', () => ({
   default: {
@@ -32,7 +31,7 @@ beforeEach(() => {
 
 describe('webhooks-outbound service', () => {
   describe('createEndpoint', () => {
-    it('generates a 64-char hex secret when none provided and stores its sha256 hash', async () => {
+    it('generates a 64-char hex secret when none provided and stores it as the signing key', async () => {
       const created = {
         id: 'ep1',
         organizationId: 'org1',
@@ -50,19 +49,18 @@ describe('webhooks-outbound service', () => {
       expect(result.secret).toMatch(/^[0-9a-f]{64}$/);
 
       const createCall = prisma.webhookEndpoint.create.mock.calls[0][0];
-      expect(createCall.data.secretHash).toBe(
-        createHash('sha256').update(result.secret).digest('hex'),
-      );
+      // Plaintext secret is stored so it can be used for HMAC signing later
+      expect(createCall.data.secretHash).toBe(result.secret);
       expect(createCall.data).toEqual({
         organizationId: 'org1',
         url: 'https://example.com/hook',
-        secretHash: createCall.data.secretHash,
+        secretHash: result.secret,
         events: ['invoice.created'],
         active: true,
       });
     });
 
-    it('uses provided secret and stores its sha256 hash', async () => {
+    it('uses provided secret and stores it as the signing key', async () => {
       prisma.webhookEndpoint.create.mockResolvedValue({ id: 'ep1' });
 
       const result = await service.createEndpoint('org1', {
@@ -72,9 +70,7 @@ describe('webhooks-outbound service', () => {
       });
 
       expect(result.secret).toBe('my-secret');
-      expect(prisma.webhookEndpoint.create.mock.calls[0][0].data.secretHash).toBe(
-        createHash('sha256').update('my-secret').digest('hex'),
-      );
+      expect(prisma.webhookEndpoint.create.mock.calls[0][0].data.secretHash).toBe('my-secret');
     });
   });
 

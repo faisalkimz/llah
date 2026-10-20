@@ -1,40 +1,25 @@
 import { Router } from 'express';
 import { requireOrg } from '../../middleware/require-org.js';
+import { requireMinRole } from '../../middleware/rbac.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
 
 const router = Router();
 
 router.use(requireOrg);
-
-// Admin guard: requires ADMIN or OWNER role
-router.use(async (req, res, next) => {
-  try {
-    const { findByUserAndOrg } = await import('../organizations/membership-repository.js');
-    const m = await findByUserAndOrg(req.user.id, req.organizationId);
-    if (!m) {
-      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Not a member' } });
-    }
-    const rank = { OWNER: 5, ADMIN: 4, BILLING: 3, DEVELOPER: 2, ANALYST: 1, VIEWER: 0 };
-    if ((rank[m.role] ?? -1) < 4) {
-      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Admin required' } });
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
+router.use(requireMinRole('ADMIN'));
 
 // Static paths before /:id
 router.get('/export', async (req, res, next) => {
   try {
     const params = validators.exportQuerySchema.parse(req.query);
     const result = await service.exportAuditLog(req.organizationId, params);
-    res.setHeader(
-      'Content-Type',
-      result.format === 'csv' ? 'text/csv' : 'application/json',
-    );
-    res.send(result.data);
+    if (result.format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.send(result.data);
+    } else {
+      res.json({ data: result.data });
+    }
   } catch (error) {
     next(error);
   }

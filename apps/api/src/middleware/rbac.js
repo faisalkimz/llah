@@ -11,7 +11,7 @@ import * as membershipRepository from '../modules/organizations/membership-repos
  */
 export async function requireOrgAccess(req, res, next) {
   try {
-    const organizationId = req.params.id || req.params.organizationId;
+    const organizationId = req.params.id || req.params.organizationId || req.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({
@@ -55,7 +55,7 @@ export function requireRole(roles) {
 
   return async (req, res, next) => {
     try {
-      const organizationId = req.params.id || req.params.organizationId;
+      const organizationId = req.params.id || req.params.organizationId || req.organizationId;
       
       if (!organizationId) {
         return res.status(400).json({
@@ -132,7 +132,7 @@ export function hasPermission(userRole, requiredRole) {
 export function requireMinRole(minRole) {
   return async (req, res, next) => {
     try {
-      const organizationId = req.params.id || req.params.organizationId;
+      const organizationId = req.params.id || req.params.organizationId || req.organizationId;
       
       if (!organizationId) {
         return res.status(400).json({

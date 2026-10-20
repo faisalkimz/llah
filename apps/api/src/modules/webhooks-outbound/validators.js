@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const KNOWN_EVENTS = [
+export const KNOWN_EVENTS = [
   'invoice.created',
   'invoice.paid',
   'invoice.voided',

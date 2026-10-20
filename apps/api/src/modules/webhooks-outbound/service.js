@@ -1,15 +1,17 @@
 import prisma from '../../lib/prisma.js';
-import { createHmac, randomBytes, createHash } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 
 export async function createEndpoint(orgId, data) {
   const secret = data.secret ?? randomBytes(32).toString('hex');
-  const secretHash = createHash('sha256').update(secret).digest('hex');
 
+  // Store the signing secret in plaintext so we can use it for HMAC signing.
+  // The receiver gets the secret once (on creation) and uses it to verify
+  // the X-Llah-Signature header on incoming deliveries.
   const endpoint = await prisma.webhookEndpoint.create({
     data: {
       organizationId: orgId,
       url: data.url,
-      secretHash,
+      secretHash: secret, // stored as-is; field name is legacy
       events: data.events,
       active: true,
     },
@@ -64,6 +66,7 @@ async function sendToEndpoint(endpoint, eventType, eventId, payload, deliveryId)
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Llah-Event': eventType,
         'X-Llah-Signature': sig,
       },
       body,
