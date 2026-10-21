@@ -15,26 +15,27 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     const accessToken = localStorage.getItem('llah_access_token');
-    
+
     if (!accessToken) {
       setLoading(false);
       return;
     }
 
     try {
-      // Verify token is valid by fetching user sessions
-      const data = await api('/auth/sessions');
-      
-      // Extract user info from token (basic JWT decode)
+      // Decode token to get user info without a network call
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      // Check token expiry
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        throw new Error('Token expired');
+      }
       setUser({
         id: payload.sub,
         email: payload.email,
-        emailVerified: payload.emailVerified || false
+        name: payload.name,
+        emailVerified: payload.emailVerified || false,
       });
       setIsAuthenticated(true);
     } catch (error) {
-      // Token invalid or expired
       logout();
     } finally {
       setLoading(false);
