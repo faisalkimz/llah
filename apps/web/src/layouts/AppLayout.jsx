@@ -64,7 +64,7 @@ const NAV_GROUPS = [
       { label: 'Audit log',     to: '/audit',         icon: Shield },
       { label: 'Team',          to: '/team',          icon: Users },
       { label: 'Settings',      to: '/settings',      icon: Settings },
-      { label: 'Admin',         to: '/admin',         icon: Shield },
+      { label: 'Admin',         to: '/admin',         icon: Shield, superAdminOnly: true },
     ],
   },
 ];
@@ -166,8 +166,7 @@ function OrgSwitcher({ collapsed }) {
 }
 
 export default function AppLayout() {
-  const { user, logout } = useAuth();
-  const nav = useNavigate();
+  const { user, logout } = useAuth();  const nav = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [dismissedBanner, setDismissedBanner] = useState(false);
@@ -267,7 +266,7 @@ export default function AppLayout() {
                   </div>
                 )}
                 <div className="space-y-0.5">
-                  {group.items.map(item => {
+                  {group.items.filter(item => !item.superAdminOnly || user?.isSuperAdmin).map(item => {
                     const Icon = item.icon;
                     return (
                       <NavLink

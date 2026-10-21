@@ -1,5 +1,17 @@
 import * as membershipRepository from '../modules/organizations/membership-repository.js';
-import { prisma } from '../lib/prisma.js';
+import prisma from '../lib/prisma.js';
+import { env } from '../config/env.js';
+
+/**
+ * Resolve the set of platform super-admin emails from the SUPER_ADMIN_EMAILS env var.
+ * Returns a Set<string> of lowercased emails.
+ */
+function getSuperAdminEmails() {
+  if (!env.SUPER_ADMIN_EMAILS) return new Set();
+  return new Set(
+    env.SUPER_ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+  );
+}
 
 /**
  * RBAC (Role-Based Access Control) middleware
@@ -122,23 +134,52 @@ export function hasPermission(userRole, requiredRole) {
 }
 
 /**
- * Require user to have ADMIN or OWNER role in ANY organization
- * Used for super-admin / cross-org access (admin module)
+ * Require the caller to be a platform-level super-admin.
+ *
+ * Super-admin status is determined by the SUPER_ADMIN_EMAILS env var (comma-separated).
+ * This is intentionally NOT derived from org membership roles -- being an OWNER or ADMIN
+ * of your own organization must NOT grant access to other orgs' data.
+ *
+ * In development (NODE_ENV !== 'production') and when SUPER_ADMIN_EMAILS is not set,
+ * the check is skipped so developers can test the admin panel without configuration.
+ * In production, SUPER_ADMIN_EMAILS MUST be set or all requests return 403.
  */
 export async function requireAdminAnywhere(req, res, next) {
   try {
-    const membership = await prisma.membership.findFirst({
-      where: {
-        userId: req.user.id,
-        role: { in: ['ADMIN', 'OWNER'] },
-      },
-    });
-    if (!membership) {
+    const superAdminEmails = getSuperAdminEmails();
+
+    // Production hard-fail if no super-admin list is configured
+    if (env.NODE_ENV === 'production' && superAdminEmails.size === 0) {
       return res.status(403).json({
-        error: { code: 'ADMIN_REQUIRED', message: 'Admin or Owner role required.' },
+        error: {
+          code: 'SUPER_ADMIN_NOT_CONFIGURED',
+          message: 'Platform admin access is not configured. Set SUPER_ADMIN_EMAILS.',
+        },
       });
     }
-    req.adminMembership = membership;
+
+    // Dev/test bypass: allow if SUPER_ADMIN_EMAILS is not set
+    if (superAdminEmails.size === 0) {
+      req.isSuperAdmin = true;
+      return next();
+    }
+
+    // Fetch the user's email from DB to verify (can't trust JWT alone for privilege escalation)
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { email: true },
+    });
+
+    if (!user || !superAdminEmails.has(user.email.toLowerCase())) {
+      return res.status(403).json({
+        error: {
+          code: 'SUPER_ADMIN_REQUIRED',
+          message: 'This action requires platform super-admin access.',
+        },
+      });
+    }
+
+    req.isSuperAdmin = true;
     next();
   } catch (error) {
     next(error);

@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user is logged in on mount
   useEffect(() => {
     checkAuth();
   }, []);
@@ -22,19 +21,30 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      // Decode token to get user info without a network call
+      // Decode token to get basic user info
       const payload = JSON.parse(atob(accessToken.split('.')[1]));
       // Check token expiry
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         throw new Error('Token expired');
       }
-      setUser({
+      const baseUser = {
         id: payload.sub,
         email: payload.email,
         name: payload.name,
         emailVerified: payload.emailVerified || false,
-      });
+        isSuperAdmin: false,
+      };
+      setUser(baseUser);
       setIsAuthenticated(true);
+
+      // Fetch full profile including isSuperAdmin (non-blocking)
+      api('/auth/me').then(res => {
+        if (res.success && res.data) {
+          setUser(prev => ({ ...prev, ...res.data }));
+        }
+      }).catch(() => {
+        // non-critical — basic user info already set from token
+      });
     } catch (error) {
       logout();
     } finally {
@@ -45,9 +55,15 @@ export function AuthProvider({ children }) {
   function login(tokens, userData) {
     localStorage.setItem('llah_access_token', tokens.accessToken);
     localStorage.setItem('llah_refresh_token', tokens.refreshToken);
-    
-    setUser(userData);
+    setUser({ isSuperAdmin: false, ...userData });
     setIsAuthenticated(true);
+
+    // Fetch full profile after login
+    api('/auth/me').then(res => {
+      if (res.success && res.data) {
+        setUser(prev => ({ ...prev, ...res.data }));
+      }
+    }).catch(() => {});
   }
 
   function logout() {
@@ -69,7 +85,7 @@ export function AuthProvider({ children }) {
     logout,
     updateUser,
     checkAuth,
-    api
+    api,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

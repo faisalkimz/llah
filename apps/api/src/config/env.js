@@ -10,6 +10,9 @@ const schema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().default(30),
+  // Comma-separated list of emails that have platform-wide super-admin access
+  // e.g. SUPER_ADMIN_EMAILS=admin@llah.io,ops@llah.io
+  SUPER_ADMIN_EMAILS: z.string().optional(),
   // Optional: Stripe webhook verification
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // Optional: PayPal webhook verification

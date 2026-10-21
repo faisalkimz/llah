@@ -106,4 +106,34 @@ router.post('/verify-email/request', requireAuth, async (req, res, next) => {
   }
 });
 
+// GET /auth/me — returns current user info including super-admin status
+router.get('/me', requireAuth, async (req, res, next) => {
+  try {
+    const { env } = await import('../../config/env.js');
+    const prisma = (await import('../../lib/prisma.js')).default;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.auth.sub },
+      select: { id: true, email: true, name: true, emailVerified: true, createdAt: true },
+    });
+
+    if (!user) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found.' } });
+
+    let isSuperAdmin = false;
+    if (env.SUPER_ADMIN_EMAILS) {
+      const superAdminEmails = new Set(
+        env.SUPER_ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+      );
+      isSuperAdmin = superAdminEmails.has(user.email.toLowerCase());
+    } else if (env.NODE_ENV !== 'production') {
+      // Dev bypass: treat all users as super-admin when env var not set
+      isSuperAdmin = true;
+    }
+
+    res.json({ data: { ...user, isSuperAdmin } });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default router;
