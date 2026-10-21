@@ -16,7 +16,7 @@ export default function PasswordInput({
   return (
     <div className="relative">
       <input
-        className={`w-full h-11 rounded-lg border border-line bg-white px-4 pr-11 text-sm text-ink placeholder-muted outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/10 ${className}`}
+        className={`w-full h-11 rounded-lg border border-line bg-surface px-4 pr-11 text-sm text-ink placeholder-muted outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/10 ${className}`}
         type={showPassword ? 'text' : 'password'}
         placeholder={placeholder}
         value={value}

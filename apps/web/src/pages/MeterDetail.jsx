@@ -1,57 +1,58 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronRight, Pencil, Trash2, X, Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import { SkeletonText } from '../components/ui/Skeleton.jsx';
+
 const AGGREGATION_TYPES = [
-  { value: 'SUM', label: 'Sum' },
-  { value: 'COUNT', label: 'Count' },
-  { value: 'MAX', label: 'Maximum' },
+  { value: 'SUM',    label: 'Sum' },
+  { value: 'COUNT',  label: 'Count' },
+  { value: 'MAX',    label: 'Maximum' },
   { value: 'LATEST', label: 'Latest' },
 ];
 
 export default function MeterDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [meter, setMeter] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const toast = useToast();
-  
+
+  const [meter, setMeter]           = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [deleting, setDeleting]     = useState(false);
+  const [editing, setEditing]       = useState(false);
+  const [formData, setFormData]     = useState({});
+  const [saving, setSaving]         = useState(false);
+  const [saveError, setSaveError]   = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
   const organizationId = localStorage.getItem('current_organization_id');
 
   useEffect(() => {
-    if (organizationId && id) {
-      loadMeter();
-    }
+    if (organizationId && id) loadMeter();
   }, [organizationId, id]);
 
   async function loadMeter() {
     try {
       setLoading(true);
       setError(null);
-      
       const result = await api(`/meters/${id}`);
-      
       if (result.success) {
-        const data = result.data;
-        setMeter(data);
+        setMeter(result.data);
         setFormData({
-          name: data.name || '',
-          unit: data.unit || '',
-          aggregation: data.aggregation || 'SUM',
+          name:        result.data.name        || '',
+          unit:        result.data.unit        || '',
+          aggregation: result.data.aggregation || 'SUM',
         });
       } else {
-        setError(result.error?.message || 'Failed to load meter');
+        setError(result.error?.message || 'Failed to load meter.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to load meter');
+      setError(err.message || 'Failed to load meter.');
     } finally {
       setLoading(false);
     }
@@ -59,43 +60,29 @@ export default function MeterDetail() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
     setSaveError(null);
-
     try {
       const payload = {};
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== meter[key]) {
-          payload[key] = value;
-        }
+      Object.entries(formData).forEach(([k, v]) => {
+        if (v !== meter[k]) payload[k] = v;
       });
-
-      if (Object.keys(payload).length === 0) {
-        setEditing(false);
-        return;
-      }
-
-      const result = await api(`/meters/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      });
-
+      if (Object.keys(payload).length === 0) { setEditing(false); return; }
+      const result = await api(`/meters/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
       if (result.success) {
         setMeter(result.data);
         setEditing(false);
+        toast?.success?.('Meter updated.');
       } else {
-        setSaveError(result.error?.message || 'Failed to update meter');
+        setSaveError(result.error?.message || 'Failed to update meter.');
       }
     } catch (err) {
-      setSaveError(err.message || 'Failed to update meter');
+      setSaveError(err.message || 'Failed to update meter.');
     } finally {
       setSaving(false);
     }
@@ -104,11 +91,7 @@ export default function MeterDetail() {
   function handleCancelEdit() {
     setEditing(false);
     setSaveError(null);
-    setFormData({
-      name: meter.name || '',
-      unit: meter.unit || '',
-      aggregation: meter.aggregation || 'SUM',
-    });
+    setFormData({ name: meter.name || '', unit: meter.unit || '', aggregation: meter.aggregation || 'SUM' });
   }
 
   async function handleDelete() {
@@ -118,228 +101,183 @@ export default function MeterDetail() {
       if (result.success) {
         navigate('/meters');
       } else {
-        toast.error(result.error?.message || 'Failed to delete meter');
-        setDeleting(false);
+        toast?.error?.(result.error?.message || 'Failed to delete meter.');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to delete meter');
-      setDeleting(false);
+      toast?.error?.(err.message || 'Failed to delete meter.');
     } finally {
+      setDeleting(false);
       setDeleteConfirm(false);
     }
   }
 
+  // ── No org ────────────────────────────────────────────────────
   if (!organizationId) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please select an organization first</p>
-          <Link to="/organizations" className="text-black hover:underline">
-            Go to Organizations
-          </Link>
-        </div>
-      </div>
+      <EmptyState
+        title="No organization selected"
+        description="Select an organization to view this meter."
+        action={{ label: 'Go to organizations', onClick: () => navigate('/organizations') }}
+      />
     );
   }
 
+  // ── Loading ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center text-gray-500">Loading meter...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">{error}</div>
-          <Link to="/meters" className="text-black hover:underline">
-            Back to Meters
-          </Link>
+      <div className="space-y-6">
+        <div className="h-8 w-48"><SkeletonText /></div>
+        <div className="card p-6 space-y-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-5 w-full max-w-sm"><SkeletonText /></div>)}
         </div>
       </div>
     );
   }
 
-  if (!meter) {
+  // ── Error ─────────────────────────────────────────────────────
+  if (error || !meter) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center">
-          <div className="text-gray-600 mb-4">Meter not found</div>
-          <Link to="/meters" className="text-black hover:underline">
-            Back to Meters
-          </Link>
-        </div>
-      </div>
+      <EmptyState
+        title="Meter not found"
+        description={error || 'This meter does not exist or you do not have access.'}
+        action={{ label: 'Back to meters', onClick: () => navigate('/meters') }}
+      />
     );
   }
+
+  const aggLabel = AGGREGATION_TYPES.find(t => t.value === meter.aggregation)?.label ?? meter.aggregation;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-          <Link to="/meters" className="hover:text-gray-900">
-            Meters
-          </Link>
-          <span>/</span>
-          <span className="text-gray-900">{meter.key}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{meter.name}</h1>
-            <p className="text-sm text-gray-500 mt-1 font-mono">{meter.key}</p>
-          </div>
+    <>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted mb-5" aria-label="Breadcrumb">
+        <Link to="/meters" className="hover:text-ink transition-colors">Meters</Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="text-ink font-medium">{meter.name}</span>
+      </nav>
+
+      <PageHeader
+        title={meter.name}
+        description={<span className="font-mono text-xs">{meter.key}</span>}
+      >
+        {!editing ? (
           <div className="flex items-center gap-2">
-            {!editing && (
-              <>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(true)}
-                  disabled={deleting}
-                  className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  {deleting ? 'Deleting...' : 'Delete'}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {meter._count && (
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="text-2xl font-semibold text-gray-900">
-              {meter._count.usageEvents || 0}
-            </div>
-            <div className="text-sm text-gray-600 mt-1">Usage Events</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <div className="text-2xl font-semibold text-gray-900">
-              {meter._count.prices || 0}
-            </div>
-            <div className="text-sm text-gray-600 mt-1">Prices</div>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSave} className="space-y-6">
-        {saveError && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
-            {saveError}
-          </div>
-        )}
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Meter Details</h2>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Meter Key
-            </label>
-            <div className="text-gray-900 font-mono text-sm bg-gray-50 px-4 py-2 rounded border border-gray-200">
-              {meter.key}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Key cannot be changed to maintain data integrity
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Display Name
-            </label>
-            {editing ? (
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                required
-              />
-            ) : (
-              <div className="text-gray-900">{meter.name}</div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Unit
-            </label>
-            {editing ? (
-              <input
-                type="text"
-                name="unit"
-                value={formData.unit}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                required
-              />
-            ) : (
-              <div className="text-gray-900">{meter.unit}</div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Aggregation Method
-            </label>
-            {editing ? (
-              <select
-                name="aggregation"
-                value={formData.aggregation}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                required
-              >
-                {AGGREGATION_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="text-gray-900">{meter.aggregation}</div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Metadata</h2>
-          <div className="text-sm">
-            <span className="text-gray-600">Created:</span>
-            <span className="ml-2 text-gray-900">
-              {new Date(meter.createdAt).toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        {editing && (
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
+            <button onClick={() => setEditing(true)} className="btn-secondary btn-sm gap-1.5">
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
             </button>
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="px-6 py-2 text-sm text-gray-600 hover:text-gray-900 transition"
-            >
+            <button onClick={() => setDeleteConfirm(true)} disabled={deleting} className="btn-danger btn-sm gap-1.5">
+              <Trash2 className="h-3.5 w-3.5" />
+              {deleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button form="meter-form" type="submit" disabled={saving} className="btn-primary btn-sm gap-1.5">
+              <Check className="h-3.5 w-3.5" />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="button" onClick={handleCancelEdit} className="btn-secondary btn-sm gap-1.5">
+              <X className="h-3.5 w-3.5" />
               Cancel
             </button>
           </div>
         )}
+      </PageHeader>
+
+      {/* Stat cards */}
+      {meter._count && (
+        <div className="grid grid-cols-2 gap-4 mt-6 mb-6">
+          <div className="card p-4">
+            <div className="text-2xl font-semibold text-ink tabular-nums">{meter._count.usageEvents ?? 0}</div>
+            <div className="text-xs text-muted mt-1">Usage events</div>
+          </div>
+          <div className="card p-4">
+            <div className="text-2xl font-semibold text-ink tabular-nums">{meter._count.prices ?? 0}</div>
+            <div className="text-xs text-muted mt-1">Prices attached</div>
+          </div>
+        </div>
+      )}
+
+      {/* Details form */}
+      <form id="meter-form" onSubmit={handleSave} className="space-y-6">
+        {saveError && (
+          <div className="rounded-lg bg-danger-muted border border-danger/20 px-4 py-3 text-sm text-danger">
+            {saveError}
+          </div>
+        )}
+
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-sm font-semibold text-ink">Meter details</h2>
+          </div>
+          <div className="card-body space-y-5">
+
+            {/* Meter key — always read-only */}
+            <div>
+              <label className="label">Meter key</label>
+              <div className="code-block py-2">{meter.key}</div>
+              <p className="label-caption">Key is immutable after creation to preserve data integrity.</p>
+            </div>
+
+            {/* Display name */}
+            <div>
+              <label className="label" htmlFor="meter-name">Display name</label>
+              {editing ? (
+                <input id="meter-name" name="name" type="text" value={formData.name} onChange={handleChange} className="input" required />
+              ) : (
+                <div className="text-sm text-ink">{meter.name}</div>
+              )}
+            </div>
+
+            {/* Unit */}
+            <div>
+              <label className="label" htmlFor="meter-unit">Unit</label>
+              {editing ? (
+                <input id="meter-unit" name="unit" type="text" value={formData.unit} onChange={handleChange} className="input" required placeholder="e.g. requests, GB, minutes" />
+              ) : (
+                <div className="text-sm text-ink">{meter.unit || <span className="text-muted">Not set</span>}</div>
+              )}
+            </div>
+
+            {/* Aggregation */}
+            <div>
+              <label className="label" htmlFor="meter-agg">Aggregation method</label>
+              {editing ? (
+                <select id="meter-agg" name="aggregation" value={formData.aggregation} onChange={handleChange} className="select" required>
+                  {AGGREGATION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              ) : (
+                <div className="text-sm text-ink">{aggLabel}</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-sm font-semibold text-ink">Metadata</h2>
+          </div>
+          <div className="card-body">
+            <dl className="kv-list">
+              <div className="kv-row">
+                <dt className="kv-key">Meter ID</dt>
+                <dd className="kv-value font-mono text-xs">{meter.id}</dd>
+              </div>
+              <div className="kv-row">
+                <dt className="kv-key">Created</dt>
+                <dd className="kv-value">{new Date(meter.createdAt).toLocaleString()}</dd>
+              </div>
+              {meter.updatedAt && (
+                <div className="kv-row">
+                  <dt className="kv-key">Last updated</dt>
+                  <dd className="kv-value">{new Date(meter.updatedAt).toLocaleString()}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
       </form>
 
       <ConfirmModal
@@ -348,10 +286,10 @@ export default function MeterDetail() {
         onConfirm={handleDelete}
         loading={deleting}
         title="Delete meter"
-        description={`Delete meter "${meter?.name}"? This action cannot be undone and will fail if the meter has existing usage events.`}
+        description={`Delete meter "${meter.name}"? This cannot be undone. It will fail if the meter has existing usage events or prices.`}
         confirmLabel="Delete meter"
         confirmVariant="btn-danger"
       />
-    </div>
+    </>
   );
 }
