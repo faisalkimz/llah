@@ -1,52 +1,36 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Gauge } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 
 export default function Meters() {
+  const nav = useNavigate();
   const [meters, setMeters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [pagination, setPagination] = useState({
-    limit: 20,
-    offset: 0,
-    total: 0,
-  });
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
 
   const organizationId = localStorage.getItem('current_organization_id');
 
   useEffect(() => {
-    if (organizationId) {
-      fetchMeters();
-    } else {
-      setLoading(false);
-      setError('Please select an organization first');
-    }
-  }, [search, pagination.offset, organizationId]);
+    if (organizationId) fetchMeters();
+    else { setLoading(false); setError('Please select an organization first.'); }
+  }, [pagination.offset, organizationId]);
 
-  const fetchMeters = async () => {
+  async function fetchMeters() {
     try {
       setLoading(true);
       setError(null);
-      
-      const params = new URLSearchParams({
-        limit: pagination.limit.toString(),
-        offset: pagination.offset.toString(),
-      });
-      
-      if (search) {
-        params.append('search', search);
-      }
-      
-      const response = await api(`/meters?${params.toString()}`);
-      
+      const params = new URLSearchParams({ limit: pagination.limit.toString(), offset: pagination.offset.toString() });
+      const response = await api(`/meters?${params}`);
       if (response.success) {
-        setMeters(response.data.meters || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.pagination?.total || 0,
-        }));
+        const list = response.data?.meters || (Array.isArray(response.data) ? response.data : []);
+        setMeters(list);
+        setPagination(prev => ({ ...prev, total: response.data?.pagination?.total ?? response.data?.total ?? list.length }));
       } else {
         setError(response.error?.message || 'Failed to load meters');
       }
@@ -55,155 +39,51 @@ export default function Meters() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPagination(prev => ({ ...prev, offset: 0 }));
-  };
-
-  const handleNextPage = () => {
-    setPagination(prev => ({
-      ...prev,
-      offset: prev.offset + prev.limit,
-    }));
-  };
-
-  const handlePrevPage = () => {
-    setPagination(prev => ({
-      ...prev,
-      offset: Math.max(0, prev.offset - prev.limit),
-    }));
-  };
-
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
-  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const columns = [
+    { key: 'name', header: 'Name', render: v => <span className="font-medium text-ink">{v}</span> },
+    { key: 'slug', header: 'Slug', mono: true, cellClassName: 'cell-muted' },
+    { key: 'aggregation', header: 'Aggregation', cellClassName: 'cell-muted' },
+    { key: 'eventName', header: 'Event', render: (v, row) => v || row.event || '—', cellClassName: 'cell-muted' },
+    { key: 'active', header: 'Status', render: v => <StatusBadge status={v !== false ? 'ACTIVE' : 'DISABLED'} /> },
+    { key: 'createdAt', header: 'Created', render: v => new Date(v).toLocaleDateString(), cellClassName: 'cell-muted' },
+  ];
 
   return (
     <>
       <PageHeader
         title="Meters"
-        description="Define what to measure for usage-based billing"
-        action={
-          <Link to="/meters/new" className="btn-primary">
-            + New Meter
-          </Link>
-        }
+        description="Manage usage meters for metered billing"
+        action={<Link to="/meters/new" className="btn-primary">Create meter</Link>}
       />
 
-      <div className="llah-card">
-        <div className="p-4 border-b border-border">
-          <input
-            type="text"
-            placeholder="Search meters by name or key..."
-            value={search}
-            onChange={handleSearchChange}
-            className="input w-full max-w-md"
+      {error && !loading && (
+        <div className="card p-4 mb-4 text-sm text-danger">{error}</div>
+      )}
+
+      <div className="card">
+        <DataTable
+          columns={columns}
+          data={meters}
+          loading={loading}
+          onRowClick={row => nav(`/meters/${row.id}`)}
+          emptyState={
+            <EmptyState
+              icon={Gauge}
+              title="No meters yet"
+              description="Create meters to track usage events for metered billing."
+              action={<Link to="/meters/new" className="btn-primary">Create meter</Link>}
+            />
+          }
+        />
+        {!loading && !error && pagination.total > pagination.limit && (
+          <TablePagination
+            offset={pagination.offset}
+            limit={pagination.limit}
+            total={pagination.total}
+            onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
           />
-        </div>
-
-        {loading && (
-          <div className="p-8 text-center text-muted">
-            Loading meters...
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="p-8 text-center">
-            <div className="text-destructive mb-2">Error: {error}</div>
-            {error.includes('organization') ? (
-              <Link to="/organizations" className="btn-primary">
-                Go to Organizations
-              </Link>
-            ) : (
-              <button onClick={fetchMeters} className="btn-secondary">
-                Retry
-              </button>
-            )}
-          </div>
-        )}
-
-        {!loading && !error && meters.length === 0 && (
-          <div className="p-8 text-center text-muted">
-            {search ? (
-              <>No meters found matching "{search}"</>
-            ) : (
-              <>
-                No meters yet.{' '}
-                <Link to="/meters/new" className="text-primary hover:underline">
-                  Create your first meter
-                </Link>
-              </>
-            )}
-          </div>
-        )}
-
-        {!loading && !error && meters.length > 0 && (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Key</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Name</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Unit</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Aggregation</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {meters.map((meter) => (
-                    <tr
-                      key={meter.id}
-                      className="border-t border-border hover:bg-muted/10"
-                    >
-                      <td className="p-3">
-                        <Link
-                          to={`/meters/${meter.id}`}
-                          className="text-primary hover:underline font-mono text-sm"
-                        >
-                          {meter.key}
-                        </Link>
-                      </td>
-                      <td className="p-3 font-medium">{meter.name}</td>
-                      <td className="p-3 text-sm text-muted-foreground">{meter.unit}</td>
-                      <td className="p-3 text-sm text-muted-foreground">{meter.aggregation}</td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {new Date(meter.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="p-4 border-t border-border flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {pagination.offset + 1} to{' '}
-                {Math.min(pagination.offset + pagination.limit, pagination.total)} of{' '}
-                {pagination.total} meters
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={pagination.offset === 0}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages || 1}
-                </div>
-                <button
-                  onClick={handleNextPage}
-                  disabled={pagination.offset + pagination.limit >= pagination.total}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </>
         )}
       </div>
     </>

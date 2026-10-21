@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Users } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 
 export default function Customers() {
+  const nav = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [pagination, setPagination] = useState({
-    limit: 20,
-    offset: 0,
-    total: 0,
-  });
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
 
   const organizationId = localStorage.getItem('current_organization_id');
 
@@ -21,32 +21,23 @@ export default function Customers() {
       fetchCustomers();
     } else {
       setLoading(false);
-      setError('Please select an organization first');
+      setError('Please select an organization first.');
     }
   }, [search, pagination.offset, organizationId]);
 
-  const fetchCustomers = async () => {
+  async function fetchCustomers() {
     try {
       setLoading(true);
       setError(null);
-      
       const params = new URLSearchParams({
         limit: pagination.limit.toString(),
         offset: pagination.offset.toString(),
       });
-      
-      if (search) {
-        params.append('search', search);
-      }
-      
-      const response = await api(`/customers?${params.toString()}`);
-      
+      if (search) params.append('search', search);
+      const response = await api(`/customers?${params}`);
       if (response.success) {
         setCustomers(response.data.customers || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.total || 0,
-        }));
+        setPagination(prev => ({ ...prev, total: response.data.total || 0 }));
       } else {
         setError(response.error?.message || 'Failed to load customers');
       }
@@ -55,29 +46,44 @@ export default function Customers() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPagination(prev => ({ ...prev, offset: 0 })); // Reset to first page on search
-  };
+  function handleExportCsv() {
+    const rows = [
+      ['Name', 'Email', 'Phone', 'External ID', 'Created'],
+      ...customers.map(c => [
+        c.name, c.email || '', c.phone || '', c.externalId || '',
+        new Date(c.createdAt).toLocaleDateString(),
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customers.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-  const handleNextPage = () => {
-    setPagination(prev => ({
-      ...prev,
-      offset: prev.offset + prev.limit,
-    }));
-  };
-
-  const handlePrevPage = () => {
-    setPagination(prev => ({
-      ...prev,
-      offset: Math.max(0, prev.offset - prev.limit),
-    }));
-  };
-
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
-  const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+  const columns = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: (v, row) => (
+        <span className="font-medium text-ink">{v}</span>
+      ),
+    },
+    { key: 'email', header: 'Email', render: v => v || '—', cellClassName: 'cell-muted' },
+    { key: 'phone', header: 'Phone', render: v => v || '—', cellClassName: 'cell-muted' },
+    { key: 'externalId', header: 'External ID', mono: true, render: v => v || '—' },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      render: v => new Date(v).toLocaleDateString(),
+      cellClassName: 'cell-muted',
+    },
+  ];
 
   return (
     <>
@@ -85,140 +91,60 @@ export default function Customers() {
         title="Customers"
         description="Manage your customers and their information"
         action={
-          <Link
-            to="/customers/new"
-            className="btn-primary"
-          >
-            + New Customer
-          </Link>
+          <div className="flex gap-2">
+            <button onClick={handleExportCsv} className="btn-secondary" disabled={customers.length === 0}>
+              Export CSV
+            </button>
+            <Link to="/customers/new" className="btn-primary">New customer</Link>
+          </div>
         }
       />
 
-      <div className="llah-card">
-        {/* Search Bar */}
-        <div className="p-4 border-b border-border">
+      <div className="card">
+        <div className="card-header">
           <input
             type="text"
-            placeholder="Search customers by name or email..."
+            placeholder="Search by name or email..."
             value={search}
-            onChange={handleSearchChange}
-            className="input w-full max-w-md"
+            onChange={e => {
+              setSearch(e.target.value);
+              setPagination(prev => ({ ...prev, offset: 0 }));
+            }}
+            className="input max-w-sm"
           />
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="p-8 text-center text-muted">
-            Loading customers...
-          </div>
-        )}
-
-        {/* Error State */}
         {error && !loading && (
           <div className="p-8 text-center">
-            <div className="text-destructive mb-2">Error: {error}</div>
-            {error.includes('organization') ? (
-              <Link to="/organizations" className="btn-primary">
-                Go to Organizations
-              </Link>
-            ) : (
-              <button onClick={fetchCustomers} className="btn-secondary">
-                Retry
-              </button>
-            )}
+            <div className="text-danger mb-2">{error}</div>
+            <button onClick={fetchCustomers} className="btn-secondary">Retry</button>
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && !error && customers.length === 0 && (
-          <div className="p-8 text-center text-muted">
-            {search ? (
-              <>No customers found matching "{search}"</>
-            ) : (
-              <>
-                No customers yet.{' '}
-                <Link to="/customers/new" className="text-primary hover:underline">
-                  Create your first customer
-                </Link>
-              </>
-            )}
-          </div>
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={customers}
+            loading={loading}
+            onRowClick={row => nav(`/customers/${row.id}`)}
+            emptyState={
+              <EmptyState
+                icon={Users}
+                title="No customers yet"
+                description="Add your first customer to get started."
+                action={<Link to="/customers/new" className="btn-primary">New customer</Link>}
+              />
+            }
+          />
         )}
 
-        {/* Customers Table */}
-        {!loading && !error && customers.length > 0 && (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Name</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Email</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Phone</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">External ID</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customers.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      className="border-t border-border hover:bg-muted/10"
-                    >
-                      <td className="p-3">
-                        <Link
-                          to={`/customers/${customer.id}`}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          {customer.name}
-                        </Link>
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {customer.email || '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {customer.phone || '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {customer.externalId || '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {new Date(customer.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="p-4 border-t border-border flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {pagination.offset + 1} to{' '}
-                {Math.min(pagination.offset + pagination.limit, pagination.total)} of{' '}
-                {pagination.total} customers
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={pagination.offset === 0}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages || 1}
-                </div>
-                <button
-                  onClick={handleNextPage}
-                  disabled={pagination.offset + pagination.limit >= pagination.total}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </>
+        {!loading && !error && pagination.total > 0 && (
+          <TablePagination
+            offset={pagination.offset}
+            limit={pagination.limit}
+            total={pagination.total}
+            onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
+          />
         )}
       </div>
     </>

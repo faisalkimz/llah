@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Terminal } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import StatCard from '../components/ui/StatCard.jsx';
 
 const LIMIT = 20;
 
@@ -13,16 +17,12 @@ export default function Events() {
   const [offset, setOffset] = useState(0);
   const [actionFilter, setActionFilter] = useState('');
   const [resourceTypeFilter, setResourceTypeFilter] = useState('');
-  const [filterDraft, setFilterDraft] = useState({ action: '', resourceType: '' });
+  const [draft, setDraft] = useState({ action: '', resourceType: '' });
 
   const organizationId = localStorage.getItem('current_organization_id');
 
   useEffect(() => {
-    if (!organizationId) {
-      setLoading(false);
-      setError('Please select an organization first');
-      return;
-    }
+    if (!organizationId) { setLoading(false); setError('Please select an organization first.'); return; }
     fetchStats();
   }, [organizationId]);
 
@@ -31,39 +31,26 @@ export default function Events() {
     fetchEvents();
   }, [offset, actionFilter, resourceTypeFilter, organizationId]);
 
-  const fetchStats = async () => {
+  async function fetchStats() {
     try {
       const res = await api('/event-log/stats');
       if (res.success) {
         const raw = res.data?.stats || res.data || {};
-        // Normalize: could be object {ACTION: count} or array [{action, count}]
-        let statsArr = [];
-        if (Array.isArray(raw)) {
-          statsArr = raw.map((s) => ({ action: s.action || s.key, count: s.count }));
-        } else if (typeof raw === 'object') {
-          statsArr = Object.entries(raw).map(([action, count]) => ({ action, count }));
-        }
-        // Sort by count desc, show top 3
-        statsArr.sort((a, b) => b.count - a.count);
-        setStats(statsArr.slice(0, 3));
+        let arr = Array.isArray(raw) ? raw.map(s => ({ action: s.action || s.key, count: s.count })) : Object.entries(raw).map(([action, count]) => ({ action, count }));
+        arr.sort((a, b) => b.count - a.count);
+        setStats(arr.slice(0, 3));
       }
-    } catch (e) {
-      // Stats are non-critical; fail silently
-    }
-  };
+    } catch { /* non-critical */ }
+  }
 
-  const fetchEvents = async () => {
+  async function fetchEvents() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        limit: LIMIT.toString(),
-        offset: offset.toString(),
-      });
+      const params = new URLSearchParams({ limit: LIMIT.toString(), offset: offset.toString() });
       if (actionFilter) params.append('action', actionFilter);
       if (resourceTypeFilter) params.append('resourceType', resourceTypeFilter);
-
-      const res = await api(`/event-log?${params.toString()}`);
+      const res = await api(`/event-log?${params}`);
       if (res.success) {
         setEvents(res.data?.events || res.data || []);
         setTotal(res.data?.total ?? res.meta?.total ?? 0);
@@ -75,187 +62,92 @@ export default function Events() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleApplyFilters = () => {
-    setActionFilter(filterDraft.action);
-    setResourceTypeFilter(filterDraft.resourceType);
-    setOffset(0);
-  };
+  function applyFilters() { setActionFilter(draft.action); setResourceTypeFilter(draft.resourceType); setOffset(0); }
+  function clearFilters() { setDraft({ action: '', resourceType: '' }); setActionFilter(''); setResourceTypeFilter(''); setOffset(0); }
 
-  const handleClearFilters = () => {
-    setFilterDraft({ action: '', resourceType: '' });
-    setActionFilter('');
-    setResourceTypeFilter('');
-    setOffset(0);
-  };
-
-  const currentPage = Math.floor(offset / LIMIT) + 1;
-  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-
-  const truncate = (str, len = 18) =>
-    str && str.length > len ? str.slice(0, len) + '…' : str || '—';
+  const columns = [
+    { key: 'action', header: 'Action', render: v => <span className="font-medium">{v || '—'}</span> },
+    { key: 'resourceType', header: 'Resource type', cellClassName: 'cell-muted' },
+    { key: 'resourceId', header: 'Resource ID', mono: true, render: v => v ? v.slice(0, 18) + (v.length > 18 ? '…' : '') : '—' },
+    { key: 'actorId', header: 'Actor ID', mono: true, render: v => v ? v.slice(0, 18) + (v.length > 18 ? '…' : '') : '—' },
+    { key: 'createdAt', header: 'Created', render: v => v ? new Date(v).toLocaleString() : '—', cellClassName: 'cell-muted' },
+  ];
 
   return (
     <>
-      <PageHeader
-        title="Event Log"
-        description="Audit trail of all actions in your organization"
-      />
+      <PageHeader title="Event log" description="Audit trail of all actions in your organization" />
 
-      {/* Stats Row */}
+      {/* Stats row */}
       {stats.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {stats.map((s) => (
-            <div
-              key={s.action}
-              className="llah-card p-3 flex flex-col gap-1"
-            >
-              <span className="text-xs text-muted-foreground truncate">{s.action}</span>
-              <span className="text-lg font-semibold">{s.count?.toLocaleString()}</span>
-            </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {stats.map(s => (
+            <StatCard key={s.action} label={s.action} value={s.count?.toLocaleString()} />
           ))}
         </div>
       )}
 
       {/* Filters */}
-      <div className="llah-card p-3 mb-4 flex flex-wrap items-end gap-3">
-        <div>
-          <label className="block text-xs text-muted mb-1">Action</label>
-          <input
-            type="text"
-            value={filterDraft.action}
-            onChange={(e) =>
-              setFilterDraft((p) => ({ ...p, action: e.target.value }))
-            }
-            onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
-            placeholder="e.g. invoice.created"
-            className="input w-44"
-          />
+      <div className="card mb-4">
+        <div className="card-body flex flex-wrap items-end gap-3">
+          <div>
+            <label className="label">Action</label>
+            <input
+              type="text"
+              value={draft.action}
+              onChange={e => setDraft(p => ({ ...p, action: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              placeholder="e.g. invoice.created"
+              className="input w-44"
+            />
+          </div>
+          <div>
+            <label className="label">Resource type</label>
+            <input
+              type="text"
+              value={draft.resourceType}
+              onChange={e => setDraft(p => ({ ...p, resourceType: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              placeholder="e.g. Invoice"
+              className="input w-44"
+            />
+          </div>
+          <button onClick={applyFilters} className="btn-primary">Filter</button>
+          {(actionFilter || resourceTypeFilter) && (
+            <button onClick={clearFilters} className="btn-secondary">Clear</button>
+          )}
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">Resource Type</label>
-          <input
-            type="text"
-            value={filterDraft.resourceType}
-            onChange={(e) =>
-              setFilterDraft((p) => ({ ...p, resourceType: e.target.value }))
-            }
-            onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
-            placeholder="e.g. Invoice"
-            className="input w-44"
-          />
-        </div>
-        <button
-          onClick={handleApplyFilters}
-          className="px-4 py-2 bg-ink text-white text-sm font-medium rounded-lg hover:bg-ink/90 transition-colors"
-        >
-          Filter
-        </button>
-        {(actionFilter || resourceTypeFilter) && (
-          <button
-            onClick={handleClearFilters}
-            className="px-4 py-2 border border-border text-sm font-medium rounded-lg hover:bg-muted/10 transition-colors"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
-      <div className="llah-card">
-        {loading && (
-          <div className="p-8 text-center text-muted">Loading events…</div>
-        )}
-
+      <div className="card">
         {error && !loading && (
           <div className="p-8 text-center">
-            <div className="text-red-600 mb-2">{error}</div>
+            <div className="text-danger mb-2">{error}</div>
             {!error.includes('organization') && (
-              <button
-                onClick={fetchEvents}
-                className="px-3 py-1.5 text-sm border border-border rounded hover:bg-muted/10"
-              >
-                Retry
-              </button>
+              <button onClick={fetchEvents} className="btn-secondary">Retry</button>
             )}
           </div>
         )}
 
-        {!loading && !error && events.length === 0 && (
-          <div className="p-8 text-center text-muted">No events found.</div>
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={events}
+            loading={loading}
+            emptyState={
+              <EmptyState icon={Terminal} title="No events found" description="Events will appear here as actions occur in your organization." />
+            }
+          />
         )}
 
-        {!loading && !error && events.length > 0 && (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Action</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Resource Type</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Resource ID</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Actor ID</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((evt) => (
-                    <tr key={evt.id} className="border-t border-border hover:bg-muted/10">
-                      <td className="p-3 text-sm font-medium">{evt.action || '—'}</td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {evt.resourceType || '—'}
-                      </td>
-                      <td
-                        className="p-3 text-sm text-muted-foreground font-mono"
-                        title={evt.resourceId || ''}
-                      >
-                        {truncate(evt.resourceId)}
-                      </td>
-                      <td
-                        className="p-3 text-sm text-muted-foreground font-mono"
-                        title={evt.actorId || ''}
-                      >
-                        {truncate(evt.actorId)}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {evt.createdAt
-                          ? new Date(evt.createdAt).toLocaleString()
-                          : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="p-4 border-t border-border flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {total > 0
-                  ? `Showing ${offset + 1}–${Math.min(offset + LIMIT, total)} of ${total}`
-                  : `Page ${currentPage}`}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setOffset((o) => Math.max(0, o - LIMIT))}
-                  disabled={offset === 0}
-                  className="px-3 py-1.5 text-sm border border-border rounded hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setOffset((o) => o + LIMIT)}
-                  disabled={offset + LIMIT >= total && total > 0}
-                  className="px-3 py-1.5 text-sm border border-border rounded hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </>
+        {!loading && !error && total > 0 && (
+          <TablePagination
+            offset={offset}
+            limit={LIMIT}
+            total={total}
+            onPageChange={setOffset}
+          />
         )}
       </div>
     </>

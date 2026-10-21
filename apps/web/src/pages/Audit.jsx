@@ -1,29 +1,29 @@
 import { useState, useEffect } from 'react';
+import { Shield } from 'lucide-react';
 import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import StatCard from '../components/ui/StatCard.jsx';
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/v1';
 const LIMIT = 20;
 
 export default function Audit() {
+  const toast = useToast();
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forbidden, setForbidden] = useState(false);
-
   const [actionFilter, setActionFilter] = useState('');
   const [resourceTypeFilter, setResourceTypeFilter] = useState('');
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  useEffect(() => {
-    loadLogs();
-  }, [offset, actionFilter, resourceTypeFilter]);
+  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadLogs(); }, [offset, actionFilter, resourceTypeFilter]);
 
   async function loadStats() {
     const res = await api('/audit/stats');
@@ -35,13 +35,10 @@ export default function Audit() {
       setLoading(true);
       setError(null);
       setForbidden(false);
-
       const params = new URLSearchParams({ limit: LIMIT.toString(), offset: offset.toString() });
       if (actionFilter.trim()) params.append('action', actionFilter.trim());
       if (resourceTypeFilter.trim()) params.append('resourceType', resourceTypeFilter.trim());
-
-      const res = await api(`/audit?${params.toString()}`);
-
+      const res = await api(`/audit?${params}`);
       if (!res.success) {
         if (res.error?.code === 'FORBIDDEN' || res.error?.message?.toLowerCase().includes('forbidden') || res.error?.message?.toLowerCase().includes('admin')) {
           setForbidden(true);
@@ -50,7 +47,6 @@ export default function Audit() {
         }
         return;
       }
-
       const raw = Array.isArray(res.data) ? res.data : (res.data?.logs || res.data?.items || []);
       setLogs(raw);
       setTotal(res.data?.total || res.meta?.total || raw.length);
@@ -59,13 +55,6 @@ export default function Audit() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleFilterChange(setter) {
-    return (e) => {
-      setter(e.target.value);
-      setOffset(0);
-    };
   }
 
   async function handleExportCsv() {
@@ -78,163 +67,85 @@ export default function Audit() {
           ...(orgId ? { 'x-organization-id': orgId } : {}),
         },
       });
-      if (!response.ok) {
-        alert('Export failed: ' + (response.statusText || response.status));
-        return;
-      }
+      if (!response.ok) { toast.error('Export failed: ' + (response.statusText || response.status)); return; }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'audit.csv';
-      a.click();
+      a.href = url; a.download = 'audit.csv'; a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('Export failed: ' + e.message);
+      toast.error('Export failed: ' + e.message);
     }
   }
 
-  const totalPages = Math.ceil(total / LIMIT);
-  const currentPage = Math.floor(offset / LIMIT) + 1;
+  const columns = [
+    { key: 'action', header: 'Action', mono: true, render: v => v || '—' },
+    { key: 'resourceType', header: 'Resource type', render: (v, row) => v || row.resource_type || row.targetType || '—', cellClassName: 'cell-muted' },
+    { key: 'resourceId', header: 'Resource ID', mono: true, render: (v, row) => {
+      const id = v || row.targetId || row.resource_id || '';
+      return id ? id.slice(0, 14) + (id.length > 14 ? '…' : '') : '—';
+    }},
+    { key: 'actor', header: 'Actor', render: (v, row) => row.actorEmail || row.actor?.email || row.actorId || '—', cellClassName: 'cell-muted' },
+    { key: 'ipAddress', header: 'IP', mono: true, render: (v, row) => v || row.ip_address || row.ip || '—', cellClassName: 'cell-muted' },
+    { key: 'createdAt', header: 'Created', render: v => v ? new Date(v).toLocaleString() : '—', cellClassName: 'cell-muted' },
+  ];
 
   return (
     <>
       <PageHeader
-        title="Audit Log"
-        description="System activity log (admin only)"
-        action={{
-          label: 'Export CSV',
-          onClick: handleExportCsv,
-        }}
+        title="Audit log"
+        description="System activity log"
+        action={<button onClick={handleExportCsv} className="btn-secondary">Export CSV</button>}
       />
 
-      {/* Stats row */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {Object.entries(stats).map(([key, count]) => (
-            <div key={key} className="llah-card p-4">
-              <div className="text-xs text-muted mb-1 uppercase tracking-wide">{key.replace(/_/g, ' ')}</div>
-              <div className="text-xl font-bold text-ink">{count}</div>
-            </div>
+          {Object.entries(stats).slice(0, 4).map(([key, count]) => (
+            <StatCard key={key} label={key.replace(/_/g, ' ')} value={count} />
           ))}
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <input
-          type="text"
-          value={actionFilter}
-          onChange={handleFilterChange(setActionFilter)}
-          placeholder="Filter by action…"
-          className="px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 w-48"
-        />
-        <input
-          type="text"
-          value={resourceTypeFilter}
-          onChange={handleFilterChange(setResourceTypeFilter)}
-          placeholder="Filter by resource type…"
-          className="px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10 w-52"
-        />
-        {(actionFilter || resourceTypeFilter) && (
-          <button
-            onClick={() => { setActionFilter(''); setResourceTypeFilter(''); setOffset(0); }}
-            className="px-3 py-2 border border-line rounded-lg text-sm hover:bg-neutral-50 transition-colors"
-          >
-            Clear
-          </button>
-        )}
+      <div className="card mb-4">
+        <div className="card-body flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="label">Action</label>
+            <input type="text" value={actionFilter} onChange={e => { setActionFilter(e.target.value); setOffset(0); }} placeholder="Filter by action…" className="input w-48" />
+          </div>
+          <div>
+            <label className="label">Resource type</label>
+            <input type="text" value={resourceTypeFilter} onChange={e => { setResourceTypeFilter(e.target.value); setOffset(0); }} placeholder="Filter by resource type…" className="input w-52" />
+          </div>
+          {(actionFilter || resourceTypeFilter) && (
+            <button onClick={() => { setActionFilter(''); setResourceTypeFilter(''); setOffset(0); }} className="btn-secondary">Clear</button>
+          )}
+        </div>
       </div>
 
-      {/* Forbidden */}
       {forbidden && (
-        <div className="llah-card p-12 text-center">
-          <div className="text-4xl mb-4">🔒</div>
-          <h2 className="text-lg font-semibold text-ink mb-2">Admin access required</h2>
-          <p className="text-muted text-sm">You need admin permissions to view the audit log.</p>
+        <div className="card p-12 text-center">
+          <Shield className="h-12 w-12 text-muted mx-auto mb-3" strokeWidth={1.5} />
+          <h2 className="text-base font-semibold text-ink mb-2">Admin access required</h2>
+          <p className="text-sm text-muted">You need admin permissions to view the audit log.</p>
         </div>
       )}
 
-      {/* Error */}
       {error && !forbidden && (
-        <div className="p-4 mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
-          {error}
-          <button onClick={loadLogs} className="ml-3 underline">Retry</button>
+        <div className="card p-4 mb-4 border-danger/30 text-sm text-danger">
+          {error} <button onClick={loadLogs} className="ml-3 underline">Retry</button>
         </div>
       )}
 
-      {/* Table */}
       {!forbidden && (
-        <div className="llah-card">
-          <div className="overflow-x-auto">
-            <table className="llah-table">
-              <thead>
-                <tr>
-                  <th>Action</th>
-                  <th>Resource Type</th>
-                  <th>Resource ID</th>
-                  <th>Actor</th>
-                  <th>IP Address</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="6" className="text-center py-8 text-muted">Loading audit logs…</td>
-                  </tr>
-                ) : logs.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center py-8 text-muted">No audit log entries found</td>
-                  </tr>
-                ) : (
-                  logs.map((log, i) => {
-                    const targetId = log.targetId || log.resourceId || log.resource_id || '';
-                    const actor = log.actorEmail || log.actor?.email || log.actorId || log.actor?.id || '—';
-                    return (
-                      <tr key={log.id || i}>
-                        <td className="font-mono text-xs">{log.action || '—'}</td>
-                        <td className="text-sm">{log.resourceType || log.resource_type || log.targetType || '—'}</td>
-                        <td className="font-mono text-xs text-muted" title={targetId}>
-                          {targetId ? targetId.slice(0, 12) + (targetId.length > 12 ? '…' : '') : '—'}
-                        </td>
-                        <td className="text-sm">{actor}</td>
-                        <td className="font-mono text-xs text-muted">{log.ipAddress || log.ip_address || log.ip || '—'}</td>
-                        <td className="text-sm text-muted">
-                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
+        <div className="card">
+          <DataTable
+            columns={columns}
+            data={logs}
+            loading={loading}
+            emptyState={<EmptyState icon={Shield} title="No audit log entries" description="Actions will appear here as they occur." />}
+          />
           {!loading && total > LIMIT && (
-            <div className="p-4 border-t border-line flex items-center justify-between">
-              <div className="text-sm text-muted">
-                Showing {offset + 1}–{Math.min(offset + LIMIT, total)} of {total}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setOffset(o => Math.max(0, o - LIMIT))}
-                  disabled={offset === 0}
-                  className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-muted">Page {currentPage} of {totalPages}</span>
-                <button
-                  onClick={() => setOffset(o => o + LIMIT)}
-                  disabled={offset + LIMIT >= total}
-                  className="px-3 py-1.5 text-sm border border-line rounded-lg hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <TablePagination offset={offset} limit={LIMIT} total={total} onPageChange={setOffset} />
           )}
         </div>
       )}

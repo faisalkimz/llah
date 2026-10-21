@@ -1,148 +1,183 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { RefreshCw } from 'lucide-react';
+import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+
+const STATUS_TABS = ['All', 'ACTIVE', 'CANCELED', 'PAST_DUE', 'PAUSED'];
 
 export default function Subscriptions() {
-  const { api } = useAuth();
+  const toast = useToast();
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
+  const [confirm, setConfirm] = useState(null); // { id, immediate, label }
 
   useEffect(() => {
     loadSubscriptions();
-  }, []);
+  }, [statusFilter, pagination.offset]);
 
   async function loadSubscriptions() {
     try {
       setLoading(true);
-      const response = await api('/subscriptions');
+      setError(null);
+      const params = new URLSearchParams({
+        limit: pagination.limit.toString(),
+        offset: pagination.offset.toString(),
+      });
+      if (statusFilter !== 'All') params.append('status', statusFilter);
+      const response = await api(`/subscriptions?${params}`);
       if (response.success) {
-        setSubscriptions(Array.isArray(response.data) ? response.data : []);
+        const list = Array.isArray(response.data) ? response.data : (response.data?.subscriptions || []);
+        setSubscriptions(list);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data?.total ?? response.meta?.total ?? list.length,
+        }));
+      } else {
+        setError(response.error?.message || 'Failed to load subscriptions');
       }
     } catch (e) {
-      console.error('Failed to load subscriptions:', e);
+      setError(e.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
   }
 
-  async function cancelSubscription(subscriptionId, immediate = false) {
-    const message = immediate 
-      ? 'Cancel this subscription immediately? The customer will lose access.'
-      : 'Mark this subscription to cancel at period end?';
-
-    if (!confirm(message)) {
-      return;
-    }
-
+  async function handleCancel() {
+    if (!confirm) return;
     try {
-      const response = await api(`/subscriptions/${subscriptionId}/cancel`, {
+      const res = await api(`/subscriptions/${confirm.id}/cancel`, {
         method: 'POST',
-        body: JSON.stringify({ immediate })
+        body: JSON.stringify({ immediate: confirm.immediate }),
       });
-
-      if (response.success) {
+      if (res.success) {
+        toast.success('Subscription canceled');
         loadSubscriptions();
+      } else {
+        toast.error(res.error?.message || 'Failed to cancel subscription');
       }
     } catch (e) {
-      console.error('Failed to cancel subscription:', e);
+      toast.error(e.message || 'An error occurred');
+    } finally {
+      setConfirm(null);
     }
   }
 
-  function getStatusBadge(status) {
-    const styles = {
-      ACTIVE: 'bg-success/10 text-success',
-      PAST_DUE: 'bg-yellow-100 text-yellow-700',
-      CANCELED: 'bg-neutral-100 text-muted',
-      PAUSED: 'bg-blue-100 text-blue-700'
-    };
-
-    return (
-      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded ${styles[status] || ''}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${
-          status === 'ACTIVE' ? 'bg-success' : 
-          status === 'PAST_DUE' ? 'bg-yellow-500' : 
-          'bg-neutral-400'
-        }`}></span>
-        {status}
-      </span>
-    );
-  }
+  const columns = [
+    { key: 'customer', header: 'Customer', render: (v, row) => row.customer?.name || '—' },
+    { key: 'plan', header: 'Plan', render: (v, row) => row.plan?.name || '—' },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (v) => <StatusBadge status={v} />,
+    },
+    {
+      key: 'currentPeriodStart',
+      header: 'Current period',
+      render: (v, row) => (
+        <span className="text-muted text-xs">
+          {v ? new Date(v).toLocaleDateString() : '—'}
+          {row.currentPeriodEnd ? ` – ${new Date(row.currentPeriodEnd).toLocaleDateString()}` : ''}
+        </span>
+      ),
+    },
+    {
+      key: 'cancelAtPeriodEnd',
+      header: 'Cancel at end',
+      render: v => v
+        ? <span className="badge badge-warning"><span className="badge-dot bg-warning" />Yes</span>
+        : <span className="text-muted text-xs">No</span>,
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (_, row) => row.status === 'ACTIVE' && !row.cancelAtPeriodEnd ? (
+        <div className="flex gap-3">
+          <button
+            onClick={e => { e.stopPropagation(); setConfirm({ id: row.id, immediate: false, label: 'Cancel at period end' }); }}
+            className="text-xs text-muted hover:text-ink"
+          >
+            Cancel at end
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); setConfirm({ id: row.id, immediate: true, label: 'Cancel now' }); }}
+            className="text-xs text-danger hover:underline"
+          >
+            Cancel now
+          </button>
+        </div>
+      ) : null,
+    },
+  ];
 
   return (
     <>
-      <PageHeader 
-        title="Subscriptions" 
-        description="Manage customer subscriptions"
-      />
+      <PageHeader title="Subscriptions" description="Manage customer subscriptions" />
 
-      <div className="llah-card">
-        <div className="overflow-x-auto">
-          <table className="llah-table">
-            <thead>
-              <tr>
-                <th>Customer</th>
-                <th>Plan</th>
-                <th>Status</th>
-                <th>Current Period</th>
-                <th>Cancel at End</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-8 text-muted">
-                    Loading subscriptions...
-                  </td>
-                </tr>
-              ) : subscriptions.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-8">
-                    <div className="text-muted mb-2">No subscriptions yet</div>
-                    <p className="text-sm text-muted">Create subscriptions via API to start billing customers</p>
-                  </td>
-                </tr>
-              ) : (
-                subscriptions.map((sub) => (
-                  <tr key={sub.id}>
-                    <td className="font-medium">{sub.customer?.name || '-'}</td>
-                    <td>{sub.plan?.name || '-'}</td>
-                    <td>{getStatusBadge(sub.status)}</td>
-                    <td className="text-sm text-muted">
-                      {new Date(sub.currentPeriodStart).toLocaleDateString()} - {new Date(sub.currentPeriodEnd).toLocaleDateString()}
-                    </td>
-                    <td>
-                      {sub.cancelAtPeriodEnd ? (
-                        <span className="text-xs text-danger">Yes</span>
-                      ) : (
-                        <span className="text-xs text-muted">No</span>
-                      )}
-                    </td>
-                    <td>
-                      {sub.status === 'ACTIVE' && !sub.cancelAtPeriodEnd && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => cancelSubscription(sub.id, false)}
-                            className="text-sm text-muted hover:text-ink"
-                          >
-                            Cancel at end
-                          </button>
-                          <button
-                            onClick={() => cancelSubscription(sub.id, true)}
-                            className="text-sm text-danger hover:underline"
-                          >
-                            Cancel now
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Status tabs */}
+      <div className="tab-list mb-4">
+        {STATUS_TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => { setStatusFilter(tab); setPagination(prev => ({ ...prev, offset: 0 })); }}
+            className={`tab ${statusFilter === tab ? 'tab-active' : ''}`}
+          >
+            {tab === 'All' ? 'All' : tab.replace('_', ' ')}
+          </button>
+        ))}
       </div>
+
+      <div className="card">
+        {error && !loading && (
+          <div className="p-8 text-center">
+            <div className="text-danger mb-2">{error}</div>
+            <button onClick={loadSubscriptions} className="btn-secondary">Retry</button>
+          </div>
+        )}
+
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={subscriptions}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={RefreshCw}
+                title="No subscriptions"
+                description="Subscriptions will appear here when created via API."
+              />
+            }
+          />
+        )}
+
+        {!loading && !error && pagination.total > pagination.limit && (
+          <TablePagination
+            offset={pagination.offset}
+            limit={pagination.limit}
+            total={pagination.total}
+            onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
+          />
+        )}
+      </div>
+
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={handleCancel}
+        title="Cancel subscription"
+        description={confirm?.immediate
+          ? 'Cancel immediately? The customer will lose access now.'
+          : 'Cancel at period end? The customer keeps access until then.'}
+        confirmLabel={confirm?.label || 'Cancel subscription'}
+        confirmVariant="btn-danger"
+      />
     </>
   );
 }

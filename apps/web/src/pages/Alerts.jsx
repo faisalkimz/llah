@@ -1,393 +1,216 @@
 import { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable from '../components/ui/DataTable.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import Drawer from '../components/ui/Drawer.jsx';
 
-const METRIC_OPTIONS = [
-  'USAGE_AMOUNT',
-  'INVOICE_OVERDUE_DAYS',
-  'PAYMENT_FAILURE_COUNT',
-  'MRR_DROP_PERCENT',
-];
-
-const OPERATOR_OPTIONS = ['GT', 'GTE', 'LT', 'LTE'];
-
-const METRIC_BADGE = {
-  USAGE_AMOUNT: 'bg-purple-100 text-purple-700',
-  INVOICE_OVERDUE_DAYS: 'bg-yellow-100 text-yellow-700',
-  PAYMENT_FAILURE_COUNT: 'bg-red-100 text-red-700',
-  MRR_DROP_PERCENT: 'bg-orange-100 text-orange-700',
-};
+const METRIC_OPTIONS = ['USAGE_AMOUNT','INVOICE_OVERDUE_DAYS','PAYMENT_FAILURE_COUNT','MRR_DROP_PERCENT'];
+const OPERATOR_OPTIONS = ['GT','GTE','LT','LTE'];
+const TABS = ['Rules', 'Firings'];
 
 export default function Alerts() {
-  const [activeTab, setActiveTab] = useState('rules');
-
-  // Rules state
+  const toast = useToast();
+  const [activeTab, setActiveTab] = useState('Rules');
   const [rules, setRules] = useState([]);
-  const [rulesLoading, setRulesLoading] = useState(true);
-  const [rulesError, setRulesError] = useState(null);
+  const [firings, setFirings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [firingsLoading, setFiringsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    metric: METRIC_OPTIONS[0],
-    threshold: '',
-    operator: OPERATOR_OPTIONS[0],
-  });
+  const [form, setForm] = useState({ name: '', metric: METRIC_OPTIONS[0], threshold: '', operator: OPERATOR_OPTIONS[0] });
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [evaluateMsg, setEvaluateMsg] = useState(null);
-
-  // Firings state
-  const [firings, setFirings] = useState([]);
-  const [firingsLoading, setFiringsLoading] = useState(false);
-  const [firingsError, setFiringsError] = useState(null);
+  const [resolveConfirm, setResolveConfirm] = useState(null);
+  const [resolving, setResolving] = useState(false);
 
   const organizationId = localStorage.getItem('current_organization_id');
 
   useEffect(() => {
-    if (!organizationId) {
-      setRulesLoading(false);
-      setRulesError('Please select an organization first');
-      return;
-    }
+    if (!organizationId) { setLoading(false); setError('Please select an organization first.'); return; }
     fetchRules();
   }, [organizationId]);
 
   useEffect(() => {
-    if (activeTab === 'firings' && organizationId) {
-      fetchFirings();
-    }
+    if (activeTab === 'Firings' && organizationId) fetchFirings();
   }, [activeTab, organizationId]);
 
-  const fetchRules = async () => {
-    setRulesLoading(true);
-    setRulesError(null);
+  async function fetchRules() {
+    setLoading(true);
+    setError(null);
     try {
       const res = await api('/alerts');
-      if (res.success) {
-        setRules(res.data?.alerts || res.data || []);
-      } else {
-        setRulesError(res.error?.message || 'Failed to load alert rules');
-      }
-    } catch (e) {
-      setRulesError(e.message || 'An error occurred');
-    } finally {
-      setRulesLoading(false);
-    }
-  };
+      if (res.success) setRules(res.data?.alerts || (Array.isArray(res.data) ? res.data : []));
+      else setError(res.error?.message || 'Failed to load alert rules');
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
 
-  const fetchFirings = async () => {
+  async function fetchFirings() {
     setFiringsLoading(true);
-    setFiringsError(null);
     try {
       const res = await api('/alerts/firings?limit=20');
-      if (res.success) {
-        setFirings(res.data?.firings || res.data || []);
-      } else {
-        setFiringsError(res.error?.message || 'Failed to load firings');
-      }
-    } catch (e) {
-      setFiringsError(e.message || 'An error occurred');
-    } finally {
-      setFiringsLoading(false);
-    }
-  };
+      if (res.success) setFirings(res.data?.firings || (Array.isArray(res.data) ? res.data : []));
+    } catch { /* ignore */ }
+    finally { setFiringsLoading(false); }
+  }
 
-  const handleFormChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleCreateRule = async (e) => {
+  async function handleCreateRule(e) {
     e.preventDefault();
-    setSubmitting(true);
-    setFormError(null);
+    if (!form.name || !form.threshold) { setFormError('Name and threshold are required.'); return; }
+    const threshold = parseFloat(form.threshold);
+    if (isNaN(threshold)) { setFormError('Threshold must be a number.'); return; }
     try {
-      const res = await api('/alerts', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: form.name,
-          metric: form.metric,
-          threshold: Number(form.threshold),
-          operator: form.operator,
-        }),
-      });
+      setFormError(null);
+      setSubmitting(true);
+      const res = await api('/alerts', { method: 'POST', body: JSON.stringify({ ...form, threshold }) });
       if (res.success) {
-        setShowForm(false);
         setForm({ name: '', metric: METRIC_OPTIONS[0], threshold: '', operator: OPERATOR_OPTIONS[0] });
-        await fetchRules();
+        setShowForm(false);
+        toast.success('Alert rule created');
+        fetchRules();
       } else {
-        setFormError(res.error?.message || 'Failed to create alert rule');
+        setFormError(res.error?.message || 'Failed to create rule');
       }
-    } catch (e) {
-      setFormError(e.message || 'An error occurred');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    } catch (e) { setFormError(e.message); }
+    finally { setSubmitting(false); }
+  }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this alert rule?')) return;
+  async function handleToggleActive(rule) {
     try {
-      const res = await api(`/alerts/${id}`, { method: 'DELETE' });
-      if (res.success) {
-        await fetchRules();
-      }
-    } catch (e) {
-      // silently ignore
-    }
-  };
+      const res = await api(`/alerts/${rule.id}`, { method: 'PATCH', body: JSON.stringify({ active: !rule.active }) });
+      if (res.success) { toast.success(`Alert ${rule.active ? 'disabled' : 'enabled'}`); fetchRules(); }
+      else toast.error(res.error?.message || 'Failed to update alert');
+    } catch (e) { toast.error(e.message); }
+  }
 
-  const handleEvaluate = async () => {
-    setEvaluateMsg(null);
+  async function handleResolve() {
+    if (!resolveConfirm) return;
     try {
-      const res = await api('/alerts/evaluate', { method: 'POST' });
-      if (res.success) {
-        setEvaluateMsg('Evaluation triggered successfully.');
-      } else {
-        setEvaluateMsg(res.error?.message || 'Evaluation failed.');
-      }
-    } catch (e) {
-      setEvaluateMsg('Evaluation failed.');
-    }
-    setTimeout(() => setEvaluateMsg(null), 4000);
-  };
+      setResolving(true);
+      const res = await api(`/alerts/firings/${resolveConfirm}/resolve`, { method: 'POST' });
+      if (res.success) { toast.success('Firing resolved'); fetchFirings(); }
+      else toast.error(res.error?.message || 'Failed to resolve');
+    } catch (e) { toast.error(e.message); }
+    finally { setResolving(false); setResolveConfirm(null); }
+  }
+
+  const ruleColumns = [
+    { key: 'name', header: 'Name', render: v => <span className="font-medium text-ink">{v}</span> },
+    { key: 'metric', header: 'Metric', cellClassName: 'cell-muted' },
+    { key: 'operator', header: 'Operator', cellClassName: 'cell-muted' },
+    { key: 'threshold', header: 'Threshold', render: v => <span className="tabular-nums">{v}</span> },
+    { key: 'active', header: 'Status', render: v => <StatusBadge status={v ? 'ACTIVE' : 'DISABLED'} /> },
+    {
+      key: 'actions', header: '',
+      render: (_, row) => (
+        <button onClick={e => { e.stopPropagation(); handleToggleActive(row); }} className={`text-xs ${row.active ? 'text-muted hover:text-danger' : 'text-accent hover:underline'}`}>
+          {row.active ? 'Disable' : 'Enable'}
+        </button>
+      ),
+    },
+  ];
+
+  const firingColumns = [
+    { key: 'alertName', header: 'Alert', render: (v, row) => v || row.alert?.name || '—' },
+    { key: 'value', header: 'Value', render: v => <span className="tabular-nums">{v ?? '—'}</span> },
+    { key: 'resolvedAt', header: 'Status', render: v => <StatusBadge status={v ? 'ACTIVE' : 'FAILED'} variant={v ? 'badge-success' : 'badge-warning'} /> },
+    { key: 'createdAt', header: 'Fired at', render: v => v ? new Date(v).toLocaleString() : '—', cellClassName: 'cell-muted' },
+    {
+      key: 'actions', header: '',
+      render: (_, row) => !row.resolvedAt ? (
+        <button onClick={e => { e.stopPropagation(); setResolveConfirm(row.id); }} className="text-xs btn-secondary">Resolve</button>
+      ) : null,
+    },
+  ];
 
   return (
     <>
       <PageHeader
         title="Alerts"
-        description="Configure alert rules and view recent firings"
+        description="Manage alert rules and view firings"
+        action={<button className="btn-primary" onClick={() => setShowForm(true)}>New rule</button>}
       />
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-border">
-        {['rules', 'firings'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
-              activeTab === tab
-                ? 'border-b-2 border-ink text-ink'
-                : 'text-muted hover:text-ink'
-            }`}
-          >
-            {tab}
-          </button>
+      <div className="tab-list mb-4">
+        {TABS.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`tab ${activeTab === tab ? 'tab-active' : ''}`}>{tab}</button>
         ))}
       </div>
 
-      {/* Rules Tab */}
-      {activeTab === 'rules' && (
-        <>
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              className="px-4 py-2 bg-ink text-white text-sm font-medium rounded-lg hover:bg-ink/90 transition-colors"
-            >
-              {showForm ? 'Cancel' : '+ New Alert'}
-            </button>
-            <button
-              onClick={handleEvaluate}
-              className="px-4 py-2 border border-border text-sm font-medium rounded-lg hover:bg-muted/10 transition-colors"
-            >
-              Evaluate Now
-            </button>
-            {evaluateMsg && (
-              <span className="text-sm text-green-700">{evaluateMsg}</span>
-            )}
-          </div>
+      {error && <div className="card p-4 mb-4 text-sm text-danger">{error}</div>}
 
-          {/* Create Form */}
-          {showForm && (
-            <div className="llah-card p-4 mb-4">
-              <h2 className="text-sm font-semibold mb-3">New Alert Rule</h2>
-              <form onSubmit={handleCreateRule} className="flex flex-wrap items-end gap-3">
-                <div>
-                  <label className="block text-xs text-muted mb-1">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={form.name}
-                    onChange={handleFormChange}
-                    className="input"
-                    placeholder="Alert name"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-muted mb-1">Metric</label>
-                  <select
-                    name="metric"
-                    value={form.metric}
-                    onChange={handleFormChange}
-                    className="input"
-                    required
-                  >
-                    {METRIC_OPTIONS.map((m) => (
-                      <option key={m} value={m}>
-                        {m.replace(/_/g, ' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-muted mb-1">Operator</label>
-                  <select
-                    name="operator"
-                    value={form.operator}
-                    onChange={handleFormChange}
-                    className="input"
-                    required
-                  >
-                    {OPERATOR_OPTIONS.map((o) => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-muted mb-1">Threshold</label>
-                  <input
-                    type="number"
-                    name="threshold"
-                    value={form.threshold}
-                    onChange={handleFormChange}
-                    className="input w-28"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-ink text-white text-sm font-medium rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Saving…' : 'Create'}
-                </button>
-              </form>
-              {formError && (
-                <p className="mt-2 text-xs text-red-600">{formError}</p>
-              )}
-            </div>
-          )}
-
-          <div className="llah-card">
-            {rulesLoading && (
-              <div className="p-8 text-center text-muted">Loading alert rules…</div>
-            )}
-            {rulesError && !rulesLoading && (
-              <div className="p-8 text-center text-red-600">{rulesError}</div>
-            )}
-            {!rulesLoading && !rulesError && rules.length === 0 && (
-              <div className="p-8 text-center text-muted">
-                No alert rules yet. Create one above.
-              </div>
-            )}
-            {!rulesLoading && !rulesError && rules.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/30">
-                    <tr>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Name</th>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Metric</th>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Operator</th>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Threshold</th>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Active</th>
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rules.map((rule) => (
-                      <tr key={rule.id} className="border-t border-border hover:bg-muted/10">
-                        <td className="p-3 text-sm font-medium">{rule.name}</td>
-                        <td className="p-3">
-                          <span
-                            className={`inline-block text-xs font-medium px-2 py-1 rounded ${
-                              METRIC_BADGE[rule.metric] || 'bg-neutral-100 text-neutral-600'
-                            }`}
-                          >
-                            {rule.metric?.replace(/_/g, ' ')}
-                          </span>
-                        </td>
-                        <td className="p-3 text-sm text-muted-foreground">{rule.operator}</td>
-                        <td className="p-3 text-sm text-muted-foreground">{rule.threshold}</td>
-                        <td className="p-3 text-sm">
-                          {rule.active ? (
-                            <span className="text-green-700">✓</span>
-                          ) : (
-                            <span className="text-muted">✗</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <button
-                            onClick={() => handleDelete(rule.id)}
-                            className="text-sm text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Firings Tab */}
-      {activeTab === 'firings' && (
-        <div className="llah-card">
-          {firingsLoading && (
-            <div className="p-8 text-center text-muted">Loading firings…</div>
-          )}
-          {firingsError && !firingsLoading && (
-            <div className="p-8 text-center text-red-600">{firingsError}</div>
-          )}
-          {!firingsLoading && !firingsError && firings.length === 0 && (
-            <div className="p-8 text-center text-muted">No recent firings.</div>
-          )}
-          {!firingsLoading && !firingsError && firings.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Alert Rule</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Value</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Fired At</th>
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Resolved At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {firings.map((firing) => (
-                    <tr key={firing.id} className="border-t border-border hover:bg-muted/10">
-                      <td className="p-3 text-sm font-medium">
-                        {firing.alertName || firing.alertRuleId || '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {firing.value ?? '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {firing.firedAt
-                          ? new Date(firing.firedAt).toLocaleString()
-                          : '—'}
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {firing.resolvedAt ? (
-                          new Date(firing.resolvedAt).toLocaleString()
-                        ) : (
-                          <span className="text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-700">
-                            Active
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {activeTab === 'Rules' && (
+        <div className="card">
+          <DataTable
+            columns={ruleColumns}
+            data={rules}
+            loading={loading}
+            emptyState={
+              <EmptyState icon={AlertTriangle} title="No alert rules" description="Create rules to get notified about important events."
+                action={<button className="btn-primary" onClick={() => setShowForm(true)}>New rule</button>} />
+            }
+          />
         </div>
       )}
+
+      {activeTab === 'Firings' && (
+        <div className="card">
+          <DataTable
+            columns={firingColumns}
+            data={firings}
+            loading={firingsLoading}
+            emptyState={<EmptyState icon={AlertTriangle} title="No firings" description="Alert firings will appear here when rules are triggered." />}
+          />
+        </div>
+      )}
+
+      <Drawer open={showForm} onClose={() => { setShowForm(false); setFormError(null); }} title="Create alert rule">
+        <form onSubmit={handleCreateRule} className="space-y-4">
+          <div>
+            <label className="label">Rule name</label>
+            <input type="text" name="name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. High payment failures" className="input" autoFocus />
+          </div>
+          <div>
+            <label className="label">Metric</label>
+            <select name="metric" value={form.metric} onChange={e => setForm(p => ({ ...p, metric: e.target.value }))} className="select">
+              {METRIC_OPTIONS.map(m => <option key={m} value={m}>{m.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Operator</label>
+              <select name="operator" value={form.operator} onChange={e => setForm(p => ({ ...p, operator: e.target.value }))} className="select">
+                {OPERATOR_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Threshold</label>
+              <input type="number" step="any" value={form.threshold} onChange={e => setForm(p => ({ ...p, threshold: e.target.value }))} placeholder="e.g. 5" className="input" />
+            </div>
+          </div>
+          {formError && <div className="text-sm text-danger bg-danger-muted border border-danger/20 rounded-md px-4 py-3">{formError}</div>}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? 'Creating…' : 'Create rule'}</button>
+            <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </Drawer>
+
+      <ConfirmModal
+        open={!!resolveConfirm}
+        onClose={() => setResolveConfirm(null)}
+        onConfirm={handleResolve}
+        loading={resolving}
+        title="Resolve firing"
+        description="Mark this alert firing as resolved?"
+        confirmLabel="Resolve"
+        confirmVariant="btn-primary"
+      />
     </>
   );
 }

@@ -1,47 +1,38 @@
 import { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
-
-const STATUS_STYLES = {
-  OPEN: 'bg-blue-100 text-blue-700',
-  CLOSED: 'bg-neutral-100 text-neutral-600',
-  FAILED: 'bg-red-100 text-red-700',
-};
-
-function StatusBadge({ status }) {
-  return (
-    <span
-      className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${STATUS_STYLES[status] || 'bg-neutral-100 text-neutral-600'}`}
-    >
-      {status}
-    </span>
-  );
-}
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 
 export default function BillingPeriods() {
+  const toast = useToast();
   const organizationId = localStorage.getItem('current_organization_id');
-
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [closing, setClosing] = useState(null); // periodId currently being closed
-  const [successMsg, setSuccessMsg] = useState(null);
+  const [closing, setClosing] = useState(null);
+  const [closeConfirm, setCloseConfirm] = useState(null);
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
 
   useEffect(() => {
-    if (organizationId) {
-      fetchPeriods();
-    } else {
-      setLoading(false);
-    }
-  }, [organizationId]);
+    if (organizationId) fetchPeriods();
+    else { setLoading(false); }
+  }, [organizationId, pagination.offset]);
 
   async function fetchPeriods() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api('/billing-periods');
+      const params = new URLSearchParams({ limit: pagination.limit.toString(), offset: pagination.offset.toString() });
+      const response = await api(`/billing-periods?${params}`);
       if (response.success) {
-        setPeriods(Array.isArray(response.data) ? response.data : []);
+        const list = Array.isArray(response.data) ? response.data : (response.data?.periods || []);
+        setPeriods(list);
+        setPagination(prev => ({ ...prev, total: response.data?.total ?? list.length }));
       } else {
         setError(response.error?.message || 'Failed to load billing periods');
       }
@@ -52,149 +43,100 @@ export default function BillingPeriods() {
     }
   }
 
-  async function closePeriod(periodId) {
-    if (!confirm('Close this billing period? This will generate an invoice.')) return;
-
+  async function handleClose() {
+    if (!closeConfirm) return;
     try {
-      setClosing(periodId);
-      setSuccessMsg(null);
-      const response = await api(`/billing-periods/${periodId}/close`, {
-        method: 'POST',
-      });
-
+      setClosing(closeConfirm);
+      const response = await api(`/billing-periods/${closeConfirm}/close`, { method: 'POST' });
       if (response.success) {
         const invoiceId = response.data?.invoiceId;
-        setSuccessMsg(
-          invoiceId
-            ? `Period closed. Invoice created: ${invoiceId}`
-            : 'Period closed successfully.'
-        );
-        await fetchPeriods();
+        toast.success(invoiceId ? `Period closed. Invoice: ${invoiceId.slice(0, 8)}…` : 'Period closed');
+        fetchPeriods();
       } else {
-        setError(response.error?.message || 'Failed to close billing period');
+        toast.error(response.error?.message || 'Failed to close billing period');
       }
     } catch (err) {
-      setError(err.message || 'An error occurred');
+      toast.error(err.message || 'An error occurred');
     } finally {
       setClosing(null);
+      setCloseConfirm(null);
     }
   }
+
+  const columns = [
+    { key: 'id', header: 'Period ID', mono: true, render: v => v?.slice(0, 12) + '…' },
+    { key: 'subscriptionId', header: 'Subscription', mono: true, render: v => v ? v.slice(0, 12) + '…' : '—' },
+    { key: 'status', header: 'Status', render: v => <StatusBadge status={v} /> },
+    { key: 'startDate', header: 'Start', render: v => v ? new Date(v).toLocaleDateString() : '—', cellClassName: 'cell-muted' },
+    { key: 'endDate', header: 'End', render: v => v ? new Date(v).toLocaleDateString() : '—', cellClassName: 'cell-muted' },
+    {
+      key: 'actions',
+      header: '',
+      render: (_, row) => row.status === 'OPEN' ? (
+        <button
+          onClick={e => { e.stopPropagation(); setCloseConfirm(row.id); }}
+          disabled={closing === row.id}
+          className="text-xs btn-secondary disabled:opacity-50"
+        >
+          {closing === row.id ? 'Closing…' : 'Close period'}
+        </button>
+      ) : null,
+    },
+  ];
 
   if (!organizationId) {
     return (
       <>
-        <PageHeader title="Billing Periods" description="View and manage billing periods" />
-        <div className="llah-card p-8 text-center">
-          <div className="text-muted mb-2">No organization selected</div>
-          <p className="text-sm text-muted-foreground">
-            Select an organization to view billing periods.
-          </p>
-        </div>
+        <PageHeader title="Billing periods" description="View and manage billing periods" />
+        <EmptyState icon={Clock} title="No organization selected" description="Select an organization to view billing periods." />
       </>
     );
   }
 
   return (
     <>
-      <PageHeader title="Billing Periods" description="View and manage billing periods" />
+      <PageHeader title="Billing periods" description="View and manage billing periods" />
 
-      {successMsg && (
-        <div className="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
-          {successMsg}
-          <button
-            onClick={() => setSuccessMsg(null)}
-            className="ml-3 text-green-600 hover:text-green-800 font-medium"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      <div className="llah-card">
-        {loading && (
-          <div className="p-8 text-center text-muted">Loading billing periods...</div>
-        )}
-
+      <div className="card">
         {error && !loading && (
           <div className="p-8 text-center">
-            <div className="text-destructive mb-2">Error: {error}</div>
-            <button onClick={fetchPeriods} className="btn-secondary">
-              Retry
-            </button>
+            <div className="text-danger mb-2">{error}</div>
+            <button onClick={fetchPeriods} className="btn-secondary">Retry</button>
           </div>
         )}
-
-        {!loading && !error && periods.length === 0 && (
-          <div className="p-8 text-center text-muted">
-            No billing periods found. Billing periods are created automatically when subscriptions
-            are active.
-          </div>
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={periods}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={Clock}
+                title="No billing periods"
+                description="Billing periods are created automatically when subscriptions are active."
+              />
+            }
+          />
         )}
-
-        {!loading && !error && periods.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/30">
-                <tr>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Period</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                    Subscription ID
-                  </th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                    Start Date
-                  </th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                    End Date
-                  </th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {periods.map((period) => (
-                  <tr key={period.id} className="border-t border-border hover:bg-muted/10">
-                    <td className="p-3 text-sm font-mono text-muted-foreground" title={period.id}>
-                      {period.id.slice(0, 8)}...
-                    </td>
-                    <td
-                      className="p-3 text-sm font-mono text-muted-foreground"
-                      title={period.subscriptionId}
-                    >
-                      {period.subscriptionId ? period.subscriptionId.slice(0, 8) + '...' : '—'}
-                    </td>
-                    <td className="p-3">
-                      <StatusBadge status={period.status} />
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {period.startDate
-                        ? new Date(period.startDate).toLocaleDateString()
-                        : '—'}
-                    </td>
-                    <td className="p-3 text-sm text-muted-foreground">
-                      {period.endDate
-                        ? new Date(period.endDate).toLocaleDateString()
-                        : '—'}
-                    </td>
-                    <td className="p-3">
-                      {period.status === 'OPEN' && (
-                        <button
-                          onClick={() => closePeriod(period.id)}
-                          disabled={closing === period.id}
-                          className="text-sm text-blue-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {closing === period.id ? 'Closing…' : 'Close Period'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {!loading && !error && pagination.total > pagination.limit && (
+          <TablePagination
+            offset={pagination.offset}
+            limit={pagination.limit}
+            total={pagination.total}
+            onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
+          />
         )}
       </div>
+
+      <ConfirmModal
+        open={!!closeConfirm}
+        onClose={() => setCloseConfirm(null)}
+        onConfirm={handleClose}
+        title="Close billing period"
+        description="Close this billing period? This will generate an invoice."
+        confirmLabel="Close period"
+        confirmVariant="btn-primary"
+      />
     </>
   );
 }

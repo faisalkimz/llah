@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-
+import { useToast } from '../components/ui/Toast.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 const AGGREGATION_TYPES = [
   { value: 'SUM', label: 'Sum' },
   { value: 'COUNT', label: 'Count' },
@@ -20,6 +21,8 @@ export default function MeterDetail() {
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const toast = useToast();
   
   const organizationId = localStorage.getItem('current_organization_id');
 
@@ -109,28 +112,20 @@ export default function MeterDetail() {
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the meter "${meter.name}"?\n\nThis action cannot be undone and will fail if the meter has existing usage events or is used in pricing.`
-    );
-    
-    if (!confirmed) return;
-
     setDeleting(true);
-    
     try {
-      const result = await api(`/meters/${id}`, {
-        method: 'DELETE',
-      });
-
+      const result = await api(`/meters/${id}`, { method: 'DELETE' });
       if (result.success) {
         navigate('/meters');
       } else {
-        alert(result.error?.message || 'Failed to delete meter');
+        toast.error(result.error?.message || 'Failed to delete meter');
         setDeleting(false);
       }
     } catch (err) {
-      alert(err.message || 'Failed to delete meter');
+      toast.error(err.message || 'Failed to delete meter');
       setDeleting(false);
+    } finally {
+      setDeleteConfirm(false);
     }
   }
 
@@ -206,7 +201,7 @@ export default function MeterDetail() {
                   Edit
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setDeleteConfirm(true)}
                   disabled={deleting}
                   className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
@@ -346,6 +341,17 @@ export default function MeterDetail() {
           </div>
         )}
       </form>
+
+      <ConfirmModal
+        open={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete meter"
+        description={`Delete meter "${meter?.name}"? This action cannot be undone and will fail if the meter has existing usage events.`}
+        confirmLabel="Delete meter"
+        confirmVariant="btn-danger"
+      />
     </div>
   );
 }

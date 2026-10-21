@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Activity } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import StatCard from '../components/ui/StatCard.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import { SkeletonCard } from '../components/ui/Skeleton.jsx';
 
 function formatUptime(seconds) {
   if (seconds == null || isNaN(seconds)) return '—';
@@ -8,10 +12,10 @@ function formatUptime(seconds) {
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const parts = [];
-  if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-  if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-  parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
-  return parts.join(', ');
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+  return parts.join(' ');
 }
 
 function toMB(bytes) {
@@ -19,251 +23,122 @@ function toMB(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function StatusDot({ ok }) {
-  return (
-    <span
-      className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-        ok ? 'bg-green-500' : 'bg-red-500'
-      }`}
-      aria-hidden="true"
-    />
-  );
-}
-
 export default function Observability() {
   const [health, setHealth] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [uptime, setUptime] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [healthError, setHealthError] = useState(null);
-  const [metricsError, setMetricsError] = useState(null);
-  const [uptimeError, setUptimeError] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
-  const fetchAll = async () => {
+  async function fetchAll() {
     setLoading(true);
-    setHealthError(null);
-    setMetricsError(null);
-    setUptimeError(null);
-
+    setErrors({});
     const [healthRes, metricsRes, uptimeRes] = await Promise.all([
       api('/observability/health'),
       api('/observability/metrics'),
       api('/observability/uptime'),
     ]);
-
-    if (healthRes.success) {
-      setHealth(healthRes.data);
-    } else {
-      setHealthError(healthRes.error?.message || 'Failed to load health data');
+    if (healthRes.success) setHealth(healthRes.data);
+    else setErrors(e => ({ ...e, health: healthRes.error?.message || 'Failed to load health' }));
+    if (metricsRes.success) setMetrics(metricsRes.data);
+    else {
+      const msg = metricsRes.error?.message || '';
+      setErrors(e => ({ ...e, metrics: msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('admin') ? 'admin' : msg || 'Failed to load metrics' }));
     }
-
-    if (metricsRes.success) {
-      setMetrics(metricsRes.data);
-    } else {
-      const code = metricsRes.error?.code;
-      if (
-        code === 'FORBIDDEN' ||
-        code === 'UNAUTHORIZED' ||
-        metricsRes.error?.message?.toLowerCase().includes('forbidden') ||
-        metricsRes.error?.message?.toLowerCase().includes('admin')
-      ) {
-        setMetricsError('admin');
-      } else {
-        setMetricsError(metricsRes.error?.message || 'Failed to load metrics');
-      }
+    if (uptimeRes.success) setUptime(uptimeRes.data);
+    else {
+      const msg = uptimeRes.error?.message || '';
+      setErrors(e => ({ ...e, uptime: msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('admin') ? 'admin' : msg || 'Failed to load uptime' }));
     }
-
-    if (uptimeRes.success) {
-      setUptime(uptimeRes.data);
-    } else {
-      const code = uptimeRes.error?.code;
-      if (
-        code === 'FORBIDDEN' ||
-        code === 'UNAUTHORIZED' ||
-        uptimeRes.error?.message?.toLowerCase().includes('forbidden') ||
-        uptimeRes.error?.message?.toLowerCase().includes('admin')
-      ) {
-        setUptimeError('admin');
-      } else {
-        setUptimeError(uptimeRes.error?.message || 'Failed to load uptime');
-      }
-    }
-
     setLoading(false);
-  };
+  }
 
-  const dbOk =
-    health?.database === 'ok' ||
-    health?.database?.status === 'ok' ||
-    health?.db === 'ok' ||
-    health?.status === 'ok';
+  const dbOk = health?.database === 'ok' || health?.database?.status === 'ok' || health?.db === 'ok' || health?.status === 'ok';
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Observability" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[0,1,2,3].map(i=><SkeletonCard key={i}/>)}</div>
+      </>
+    );
+  }
 
   return (
     <>
-      <PageHeader
-        title="System Health"
-        description="Platform observability and uptime"
-      />
+      <PageHeader title="Observability" description="Platform health and metrics" action={<button onClick={fetchAll} className="btn-secondary">Refresh</button>} />
 
-      {loading && (
-        <div className="llah-card p-8 text-center text-muted">
-          Loading observability data...
-        </div>
-      )}
-
-      {!loading && (
-        <div className="space-y-6">
-          {/* Health Card */}
-          <div className="llah-card p-6">
-            <h2 className="text-base font-semibold mb-4">Health Check</h2>
-            {healthError ? (
-              <div className="text-destructive text-sm">
-                Error: {healthError}
-                <button
-                  onClick={fetchAll}
-                  className="ml-3 btn-secondary text-xs"
-                >
-                  Retry
-                </button>
-              </div>
+      <div className="space-y-6">
+        {/* Health */}
+        <div className="card">
+          <div className="card-header"><h2 className="text-sm font-semibold text-ink">System health</h2></div>
+          <div className="card-body">
+            {errors.health ? (
+              <div className="text-sm text-danger">{errors.health}</div>
             ) : health ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center text-sm">
-                  <StatusDot ok={dbOk} />
-                  <span className="font-medium mr-2">Database:</span>
-                  <span className={dbOk ? 'text-green-700' : 'text-red-600'}>
-                    {dbOk ? 'Connected' : 'Unavailable'}
-                  </span>
-                </div>
-                {health.checkedAt || health.timestamp ? (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Last checked:{' '}
-                    {new Date(
-                      health.checkedAt || health.timestamp
-                    ).toLocaleString()}
-                  </div>
-                ) : null}
+              <div className="flex items-center gap-3 text-sm">
+                <span className={`inline-block h-3 w-3 rounded-full ${dbOk ? 'bg-success' : 'bg-danger'}`} />
+                <span className="text-muted">Database: <span className={`font-medium ${dbOk ? 'text-success' : 'text-danger'}`}>{dbOk ? 'Connected' : 'Unavailable'}</span></span>
+                {(health.checkedAt || health.timestamp) && (
+                  <span className="text-xs text-muted ml-2">Last checked: {new Date(health.checkedAt || health.timestamp).toLocaleString()}</span>
+                )}
               </div>
             ) : (
-              <div className="text-muted text-sm">No health data available.</div>
+              <div className="text-sm text-muted">No health data available.</div>
             )}
           </div>
+        </div>
 
-          {/* Metrics Section */}
-          <div className="llah-card p-6">
-            <h2 className="text-base font-semibold mb-4">Metrics</h2>
-            {metricsError === 'admin' ? (
-              <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-4 py-3">
-                Metrics require admin access.
-              </div>
-            ) : metricsError ? (
-              <div className="text-destructive text-sm">
-                Error: {metricsError}
-              </div>
+        {/* Metrics */}
+        <div className="card">
+          <div className="card-header"><h2 className="text-sm font-semibold text-ink">Metrics</h2></div>
+          <div className="card-body">
+            {errors.metrics === 'admin' ? (
+              <div className="text-sm text-warning">Metrics require admin access.</div>
+            ) : errors.metrics ? (
+              <div className="text-sm text-danger">{errors.metrics}</div>
             ) : metrics ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {metrics.apiKeys != null && (
-                  <div className="bg-muted/20 rounded p-4">
-                    <div className="text-xs text-muted-foreground mb-1">API Keys</div>
-                    <div className="text-2xl font-semibold">{metrics.apiKeys}</div>
-                  </div>
-                )}
-                {metrics.webhookDeliveries != null && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {metrics.apiKeys != null && <StatCard label="API keys" value={metrics.apiKeys} />}
+                {metrics.webhookDeliveries && (
                   <>
-                    <div className="bg-green-50 rounded p-4">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Webhooks Succeeded
-                      </div>
-                      <div className="text-2xl font-semibold text-green-700">
-                        {metrics.webhookDeliveries.succeeded ??
-                          metrics.webhookDeliveries.success ??
-                          '—'}
-                      </div>
-                    </div>
-                    <div className="bg-red-50 rounded p-4">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Webhooks Failed
-                      </div>
-                      <div className="text-2xl font-semibold text-red-700">
-                        {metrics.webhookDeliveries.failed ?? '—'}
-                      </div>
-                    </div>
-                    <div className="bg-yellow-50 rounded p-4">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Webhooks Pending
-                      </div>
-                      <div className="text-2xl font-semibold text-yellow-700">
-                        {metrics.webhookDeliveries.pending ?? '—'}
-                      </div>
-                    </div>
+                    <StatCard label="Webhooks succeeded" value={metrics.webhookDeliveries.succeeded ?? metrics.webhookDeliveries.success ?? '—'} />
+                    <StatCard label="Webhooks failed" value={metrics.webhookDeliveries.failed ?? '—'} />
+                    <StatCard label="Webhooks pending" value={metrics.webhookDeliveries.pending ?? '—'} />
                   </>
                 )}
-                {metrics.recentAuditEvents != null && (
-                  <div className="bg-muted/20 rounded p-4">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Recent Audit Events
-                    </div>
-                    <div className="text-2xl font-semibold">
-                      {metrics.recentAuditEvents}
-                    </div>
-                  </div>
-                )}
+                {metrics.recentAuditEvents != null && <StatCard label="Recent audit events" value={metrics.recentAuditEvents} />}
               </div>
             ) : (
-              <div className="text-muted text-sm">No metrics available.</div>
-            )}
-          </div>
-
-          {/* Uptime Section */}
-          <div className="llah-card p-6">
-            <h2 className="text-base font-semibold mb-4">Uptime &amp; Memory</h2>
-            {uptimeError === 'admin' ? (
-              <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-4 py-3">
-                Metrics require admin access.
-              </div>
-            ) : uptimeError ? (
-              <div className="text-destructive text-sm">
-                Error: {uptimeError}
-              </div>
-            ) : uptime ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-muted/20 rounded p-4">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Process Uptime
-                  </div>
-                  <div className="text-sm font-medium">
-                    {formatUptime(uptime.uptimeSeconds ?? uptime.uptime)}
-                  </div>
-                </div>
-                <div className="bg-muted/20 rounded p-4">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Heap Used / Total
-                  </div>
-                  <div className="text-sm font-medium">
-                    {toMB(
-                      uptime.memory?.heapUsed ??
-                        uptime.heapUsed ??
-                        uptime.memoryUsage?.heapUsed
-                    )}{' '}
-                    /{' '}
-                    {toMB(
-                      uptime.memory?.heapTotal ??
-                        uptime.heapTotal ??
-                        uptime.memoryUsage?.heapTotal
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-muted text-sm">No uptime data available.</div>
+              <EmptyState icon={Activity} title="No metrics" description="Metrics will appear here once the endpoint is enabled." />
             )}
           </div>
         </div>
-      )}
+
+        {/* Uptime */}
+        <div className="card">
+          <div className="card-header"><h2 className="text-sm font-semibold text-ink">Uptime and memory</h2></div>
+          <div className="card-body">
+            {errors.uptime === 'admin' ? (
+              <div className="text-sm text-warning">Uptime data requires admin access.</div>
+            ) : errors.uptime ? (
+              <div className="text-sm text-danger">{errors.uptime}</div>
+            ) : uptime ? (
+              <div className="grid grid-cols-2 gap-4">
+                <StatCard label="Process uptime" value={formatUptime(uptime.uptimeSeconds ?? uptime.uptime)} />
+                <StatCard
+                  label="Heap used / total"
+                  value={`${toMB(uptime.memory?.heapUsed ?? uptime.heapUsed ?? uptime.memoryUsage?.heapUsed)} / ${toMB(uptime.memory?.heapTotal ?? uptime.heapTotal ?? uptime.memoryUsage?.heapTotal)}`}
+                />
+              </div>
+            ) : (
+              <div className="text-sm text-muted">No uptime data available.</div>
+            )}
+          </div>
+        </div>
+      </div>
     </>
   );
 }

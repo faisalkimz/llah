@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Bell } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
-
-const TYPE_BADGE = {
-  INVOICE: 'bg-blue-100 text-blue-700',
-  PAYMENT: 'bg-green-100 text-green-700',
-  SUBSCRIPTION: 'bg-purple-100 text-purple-700',
-  ALERT: 'bg-red-100 text-red-700',
-  SYSTEM: 'bg-neutral-100 text-neutral-600',
-};
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -16,163 +12,117 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
 
   const organizationId = localStorage.getItem('current_organization_id');
 
   useEffect(() => {
-    if (!organizationId) {
-      setLoading(false);
-      setError('Please select an organization first');
-      return;
-    }
+    if (!organizationId) { setLoading(false); setError('Please select an organization first.'); return; }
     fetchAll();
-  }, [organizationId]);
+  }, [organizationId, pagination.offset]);
 
-  const fetchAll = async () => {
+  async function fetchAll() {
     setLoading(true);
     setError(null);
     try {
+      const params = new URLSearchParams({ limit: pagination.limit.toString(), offset: pagination.offset.toString() });
       const [listRes, countRes] = await Promise.all([
-        api('/notifications?limit=20'),
+        api(`/notifications?${params}`),
         api('/notifications/unread-count'),
       ]);
       if (listRes.success) {
-        setNotifications(
-          listRes.data?.notifications || listRes.data || []
-        );
+        const list = listRes.data?.notifications || (Array.isArray(listRes.data) ? listRes.data : []);
+        setNotifications(list);
+        setPagination(prev => ({ ...prev, total: listRes.data?.total ?? list.length }));
       } else {
         setError(listRes.error?.message || 'Failed to load notifications');
       }
-      if (countRes.success) {
-        setUnreadCount(
-          countRes.data?.count ?? countRes.data?.unreadCount ?? 0
-        );
-      }
+      if (countRes.success) setUnreadCount(countRes.data?.count ?? countRes.data?.unreadCount ?? 0);
     } catch (e) {
       setError(e.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleMarkRead = async (notification) => {
+  async function handleMarkRead(notification) {
     if (notification.readAt || notification.read) return;
     try {
       await api(`/notifications/${notification.id}/read`, { method: 'PATCH' });
       await fetchAll();
-    } catch (e) {
-      // silently ignore
-    }
-  };
+    } catch { /* silently ignore */ }
+  }
 
-  const handleMarkAllRead = async () => {
+  async function handleMarkAllRead() {
     setMarkingAll(true);
     try {
       await api('/notifications/read-all', { method: 'POST' });
       await fetchAll();
-    } catch (e) {
-      // silently ignore
     } finally {
       setMarkingAll(false);
     }
-  };
+  }
 
-  const isUnread = (n) => !n.readAt && !n.read;
+  const isUnread = n => !n.readAt && !n.read;
+
+  const columns = [
+    {
+      key: 'unread', header: '',
+      render: (_, row) => isUnread(row) ? <span className="badge badge-info"><span className="badge-dot bg-info" />Unread</span> : null,
+      width: 80,
+    },
+    { key: 'type', header: 'Type', render: v => v || '—', cellClassName: 'cell-muted' },
+    {
+      key: 'title',
+      header: 'Title',
+      render: (v, row) => (
+        <span className={isUnread(row) ? 'font-medium text-ink' : 'text-muted'}>{v || row.message || '—'}</span>
+      ),
+    },
+    { key: 'createdAt', header: 'Received', render: v => v ? new Date(v).toLocaleString() : '—', cellClassName: 'cell-muted' },
+  ];
 
   return (
     <>
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            Notifications
-            {unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </span>
-        }
-        description="Your recent billing and system notifications"
+        title="Notifications"
+        description={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
         action={
           unreadCount > 0 ? (
-            <button
-              onClick={handleMarkAllRead}
-              disabled={markingAll}
-              className="px-4 py-2 border border-border text-sm font-medium rounded-lg hover:bg-muted/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {markingAll ? 'Marking…' : 'Mark All Read'}
+            <button onClick={handleMarkAllRead} disabled={markingAll} className="btn-secondary disabled:opacity-50">
+              {markingAll ? 'Marking…' : 'Mark all read'}
             </button>
           ) : null
         }
       />
 
-      <div className="llah-card divide-y divide-border">
-        {loading && (
-          <div className="p-8 text-center text-muted">Loading notifications…</div>
-        )}
+      {error && !loading && (
+        <div className="card p-8 text-center">
+          <div className="text-danger mb-2">{error}</div>
+        </div>
+      )}
 
-        {error && !loading && (
-          <div className="p-8 text-center text-red-600">{error}</div>
-        )}
-
-        {!loading && !error && notifications.length === 0 && (
-          <div className="p-8 text-center text-muted">No notifications</div>
-        )}
-
-        {!loading &&
-          !error &&
-          notifications.map((n) => {
-            const unread = isUnread(n);
-            return (
-              <div
-                key={n.id}
-                onClick={() => handleMarkRead(n)}
-                className={`flex items-start gap-4 p-4 transition-colors ${
-                  unread
-                    ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer'
-                    : 'bg-white hover:bg-muted/10'
-                }`}
-              >
-                {/* Type Badge */}
-                <div className="mt-0.5 shrink-0">
-                  <span
-                    className={`inline-block text-xs font-medium px-2 py-1 rounded ${
-                      TYPE_BADGE[n.type] || 'bg-neutral-100 text-neutral-600'
-                    }`}
-                  >
-                    {n.type || 'NOTIFICATION'}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-sm leading-snug truncate ${
-                      unread ? 'font-semibold text-ink' : 'font-normal text-muted-foreground'
-                    }`}
-                  >
-                    {n.title || n.subject || '—'}
-                  </p>
-                  {n.message && (
-                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                      {n.message}
-                    </p>
-                  )}
-                  <p className="mt-1 text-xs text-muted">
-                    {n.createdAt
-                      ? new Date(n.createdAt).toLocaleString()
-                      : '—'}
-                  </p>
-                </div>
-
-                {/* Unread dot */}
-                {unread && (
-                  <div className="mt-1.5 shrink-0 h-2 w-2 rounded-full bg-blue-500" />
-                )}
-              </div>
-            );
-          })}
-      </div>
+      {!error && (
+        <div className="card">
+          <DataTable
+            columns={columns}
+            data={notifications}
+            loading={loading}
+            onRowClick={row => handleMarkRead(row)}
+            emptyState={
+              <EmptyState icon={Bell} title="No notifications" description="Notifications will appear here as events occur." />
+            }
+          />
+          {!loading && pagination.total > pagination.limit && (
+            <TablePagination
+              offset={pagination.offset}
+              limit={pagination.limit}
+              total={pagination.total}
+              onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
+            />
+          )}
+        </div>
+      )}
     </>
   );
 }

@@ -1,206 +1,183 @@
 import { useState, useEffect } from 'react';
+import { Database } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Drawer from '../components/ui/Drawer.jsx';
 
 export default function Products() {
   const { api } = useAuth();
+  const toast = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', active: true });
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [pagination, setPagination] = useState({ limit: 20, offset: 0, total: 0 });
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [pagination.offset]);
 
   async function loadProducts() {
     try {
       setLoading(true);
-      const response = await api('/products');
+      setError(null);
+      const params = new URLSearchParams({
+        limit: pagination.limit.toString(),
+        offset: pagination.offset.toString(),
+      });
+      const response = await api(`/products?${params}`);
       if (response.success) {
-        // API returns { products: [...], pagination: {...} }
-        const productsArray = response.data?.products || [];
-        setProducts(Array.isArray(productsArray) ? productsArray : []);
+        const list = response.data?.products || (Array.isArray(response.data) ? response.data : []);
+        setProducts(list);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data?.total ?? response.meta?.total ?? list.length,
+        }));
+      } else {
+        setError(response.error?.message || 'Failed to load products');
       }
     } catch (e) {
-      console.error('Failed to load products:', e);
+      setError(e.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
   }
 
-  async function createProduct() {
+  async function handleCreate(e) {
+    e.preventDefault();
     if (!form.name.trim()) {
-      setError('Product name is required');
+      setFormError('Product name is required');
       return;
     }
-
     try {
-      setError('');
+      setFormError('');
+      setSaving(true);
       const response = await api('/products', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
       });
-
       if (response.success) {
         setForm({ name: '', description: '', active: true });
         setShowCreate(false);
+        toast.success('Product created');
         loadProducts();
       } else {
-        setError(response.error.message);
+        setFormError(response.error?.message || 'Failed to create product');
       }
     } catch (e) {
-      setError(e.message);
+      setFormError(e.message);
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function toggleActive(productId, currentActive) {
-    try {
-      const response = await api(`/products/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ active: !currentActive })
-      });
-
-      if (response.success) {
-        loadProducts();
-      }
-    } catch (e) {
-      console.error('Failed to update product:', e);
-    }
-  }
+  const columns = [
+    { key: 'name', header: 'Name', render: v => <span className="font-medium text-ink">{v}</span> },
+    { key: 'description', header: 'Description', render: v => v ? <span className="text-muted text-sm truncate max-w-xs block">{v}</span> : '—' },
+    { key: 'active', header: 'Status', render: v => <StatusBadge status={v ? 'ACTIVE' : 'DISABLED'} /> },
+    { key: 'createdAt', header: 'Created', render: v => new Date(v).toLocaleDateString(), cellClassName: 'cell-muted' },
+  ];
 
   return (
     <>
-      <PageHeader 
-        title="Products" 
+      <PageHeader
+        title="Products"
         description="Manage your product catalog"
-        action={{
-          label: '+ Create Product',
-          onClick: () => setShowCreate(true)
-        }}
+        action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Create product</button>}
       />
 
-      {/* Create Form */}
-      {showCreate && (
-        <div className="llah-card p-6 mb-6">
-          <h3 className="font-semibold text-ink mb-4">Create New Product</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">
-                Product Name *
-              </label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., Starter Plan, Pro Plan"
-                className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">
-                Description
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Describe your product..."
-                rows={3}
-                className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="active"
-                checked={form.active}
-                onChange={(e) => setForm({ ...form, active: e.target.checked })}
-                className="h-4 w-4 text-ink border-line rounded focus:ring-ink"
-              />
-              <label htmlFor="active" className="text-sm text-ink">
-                Active
-              </label>
-            </div>
-
-            {error && (
-              <div className="text-sm text-danger bg-danger/5 border border-danger/20 rounded-lg px-4 py-3">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={createProduct}
-                className="px-4 py-2 bg-ink text-white rounded-lg hover:bg-ink/90 transition-colors"
-              >
-                Create Product
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreate(false);
-                  setError('');
-                  setForm({ name: '', description: '', active: true });
-                }}
-                className="px-4 py-2 border border-line rounded-lg hover:bg-neutral-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+      <div className="card">
+        {error && !loading && (
+          <div className="p-8 text-center">
+            <div className="text-danger mb-2">{error}</div>
+            <button onClick={loadProducts} className="btn-secondary">Retry</button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Products Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <div className="col-span-full text-center py-12 text-muted">
-            Loading products...
-          </div>
-        ) : products.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="text-muted mb-4">No products yet</div>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="text-sm text-ink hover:underline"
-            >
-              Create your first product
-            </button>
-          </div>
-        ) : (
-          products.map((product) => (
-            <div key={product.id} className="llah-card p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="font-semibold text-ink">{product.name}</h3>
-                <button
-                  onClick={() => toggleActive(product.id, product.active)}
-                  className={`text-xs font-medium px-2 py-1 rounded ${
-                    product.active
-                      ? 'bg-success/10 text-success'
-                      : 'bg-neutral-100 text-muted'
-                  }`}
-                >
-                  {product.active ? 'Active' : 'Inactive'}
-                </button>
-              </div>
-              
-              {product.description && (
-                <p className="text-sm text-muted mb-4 line-clamp-2">
-                  {product.description}
-                </p>
-              )}
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={products}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={Database}
+                title="No products yet"
+                description="Create your first product to start billing customers."
+                action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Create product</button>}
+              />
+            }
+          />
+        )}
 
-              <div className="text-xs text-muted">
-                Created {new Date(product.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          ))
+        {!loading && !error && pagination.total > pagination.limit && (
+          <TablePagination
+            offset={pagination.offset}
+            limit={pagination.limit}
+            total={pagination.total}
+            onPageChange={offset => setPagination(prev => ({ ...prev, offset }))}
+          />
         )}
       </div>
+
+      <Drawer
+        open={showCreate}
+        onClose={() => { setShowCreate(false); setFormError(''); }}
+        title="Create product"
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="label">Product name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              placeholder="e.g., Starter plan"
+              className="input"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="label">Description</label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              placeholder="Describe your product..."
+              rows={3}
+              className="textarea"
+            />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={e => setForm({ ...form, active: e.target.checked })}
+              className="h-4 w-4 rounded border-line"
+            />
+            <span className="text-sm text-ink">Active</span>
+          </label>
+          {formError && (
+            <div className="text-sm text-danger bg-danger-muted border border-danger/20 rounded-md px-4 py-3">
+              {formError}
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
+              {saving ? 'Creating…' : 'Create product'}
+            </button>
+            <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Drawer>
     </>
   );
 }

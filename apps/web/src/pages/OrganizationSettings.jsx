@@ -1,26 +1,31 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/ui/Toast.jsx';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import { SkeletonCard } from '../components/ui/Skeleton.jsx';
+
+const TABS = ['General', 'Members', 'Danger zone'];
 
 export default function OrganizationSettings() {
   const { id } = useParams();
   const { api } = useAuth();
-  const navigate = useNavigate();
+  const nav = useNavigate();
+  const toast = useToast();
   const [organization, setOrganization] = useState(null);
   const [members, setMembers] = useState([]);
   const [formData, setFormData] = useState({ name: '', slug: '' });
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('VIEWER');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('General');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
-  const roles = ['OWNER', 'ADMIN', 'BILLING', 'DEVELOPER', 'ANALYST', 'VIEWER'];
-
-  useEffect(() => {
-    loadData();
-  }, [id]);
+  useEffect(() => { loadData(); }, [id]);
 
   async function loadData() {
     try {
@@ -29,14 +34,14 @@ export default function OrganizationSettings() {
         api(`/organizations/${id}`),
         api(`/organizations/${id}/members`),
       ]);
-      
-      if (orgResult.success && membersResult.success) {
+      if (orgResult.success) {
         setOrganization(orgResult.data);
-        setMembers(membersResult.data);
         setFormData({ name: orgResult.data.name, slug: orgResult.data.slug });
-        setError(null);
       } else {
-        setError(orgResult.error?.message || membersResult.error?.message || 'Failed to load organization');
+        setError(orgResult.error?.message || 'Failed to load organization');
+      }
+      if (membersResult.success) {
+        setMembers(Array.isArray(membersResult.data) ? membersResult.data : (membersResult.data?.members || []));
       }
     } catch (err) {
       setError(err.message || 'Failed to load organization');
@@ -45,282 +50,171 @@ export default function OrganizationSettings() {
     }
   }
 
-  async function handleUpdateOrg(e) {
+  async function handleSave(e) {
     e.preventDefault();
     try {
-      const result = await api(`/organizations/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(formData)
-      });
-      
+      setSaving(true);
+      const result = await api(`/organizations/${id}`, { method: 'PATCH', body: JSON.stringify(formData) });
       if (result.success) {
         setOrganization(result.data);
-        setSuccess('Organization updated successfully');
-        setTimeout(() => setSuccess(null), 3000);
+        toast.success('Organization updated');
       } else {
-        setError(result.error?.message || 'Failed to update organization');
+        toast.error(result.error?.message || 'Failed to update organization');
       }
     } catch (err) {
-      setError(err.message || 'Failed to update organization');
+      toast.error(err.message || 'Failed to update organization');
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function handleInvite(e) {
-    e.preventDefault();
+  async function handleDelete() {
+    if (deleteInput !== organization?.name) { toast.error('Organization name does not match'); return; }
     try {
-      const result = await api(`/organizations/${id}/members`, {
-        method: 'POST',
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-        })
-      });
-      
+      setDeleting(true);
+      const result = await api(`/organizations/${id}`, { method: 'DELETE' });
       if (result.success) {
-        setInviteEmail('');
-        setInviteRole('VIEWER');
-        setSuccess('Member invited successfully');
-        setTimeout(() => setSuccess(null), 3000);
-        loadData();
+        localStorage.removeItem('current_organization_id');
+        toast.success('Organization deleted');
+        nav('/organizations');
       } else {
-        setError(result.error?.message || 'Failed to invite member');
+        toast.error(result.error?.message || 'Failed to delete organization');
       }
     } catch (err) {
-      setError(err.message || 'Failed to invite member');
-    }
-  }
-
-  async function handleUpdateRole(membershipId, newRole) {
-    try {
-      const result = await api(`/organizations/memberships/${membershipId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ role: newRole })
-      });
-      
-      if (result.success) {
-        setSuccess('Role updated successfully');
-        setTimeout(() => setSuccess(null), 3000);
-        loadData();
-      } else {
-        setError(result.error?.message || 'Failed to update role');
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to update role');
-    }
-  }
-
-  async function handleRemoveMember(membershipId) {
-    if (!confirm('Are you sure you want to remove this member?')) return;
-    try {
-      const result = await api(`/organizations/memberships/${membershipId}`, {
-        method: 'DELETE'
-      });
-      
-      if (result.success) {
-        setSuccess('Member removed successfully');
-        setTimeout(() => setSuccess(null), 3000);
-        loadData();
-      } else {
-        setError(result.error?.message || 'Failed to remove member');
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to remove member');
+      toast.error(err.message || 'Failed to delete organization');
+    } finally {
+      setDeleting(false);
+      setDeleteConfirm(false);
     }
   }
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center text-gray-500">Loading...</div>
-      </div>
+      <>
+        <PageHeader title="Organization settings" />
+        <div className="grid grid-cols-1 gap-4">{[0,1].map(i=><SkeletonCard key={i}/>)}</div>
+      </>
     );
   }
 
-  if (!organization) {
+  if (error || !organization) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center text-red-600">Organization not found</div>
-      </div>
+      <>
+        <PageHeader title="Organization settings" />
+        <div className="card p-8 text-center text-danger">{error || 'Organization not found'}</div>
+      </>
     );
   }
 
   const canManage = ['OWNER', 'ADMIN'].includes(organization.role);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">{organization.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">/{organization.slug}</p>
+    <>
+      <PageHeader
+        title={organization.name}
+        description={`/${organization.slug}`}
+        breadcrumbs={[{ label: 'Organizations', to: '/organizations' }, { label: organization.name }]}
+      />
+
+      <div className="tab-list mb-6">
+        {TABS.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`tab ${activeTab === tab ? 'tab-active' : ''}`}>{tab}</button>
+        ))}
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-8">
-        <div className="flex gap-8">
-          <button
-            onClick={() => setActiveTab('general')}
-            className={`pb-3 text-sm font-medium border-b-2 transition ${
-              activeTab === 'general'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            General
-          </button>
-          <button
-            onClick={() => setActiveTab('members')}
-            className={`pb-3 text-sm font-medium border-b-2 transition ${
-              activeTab === 'members'
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Team Members
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded">
-          {success}
-        </div>
-      )}
-
-      {/* General Tab */}
-      {activeTab === 'general' && (
-        <div className="bg-white border border-gray-200 rounded p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Organization Settings</h2>
-          {canManage ? (
-            <form onSubmit={handleUpdateOrg} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">URL Slug</label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                  pattern="[a-z0-9-]+"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition"
-              >
-                Save Changes
-              </button>
-            </form>
-          ) : (
-            <p className="text-sm text-gray-500">
-              Only owners and admins can modify organization settings.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Members Tab */}
-      {activeTab === 'members' && (
-        <div className="space-y-6">
-          {/* Invite Form */}
-          {canManage && (
-            <div className="bg-white border border-gray-200 rounded p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Invite Member</h2>
-              <form onSubmit={handleInvite} className="space-y-4">
-                <div className="flex gap-3">
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="member@example.com"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                    required
-                  />
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                  >
-                    {roles.map((role) => (
-                      <option key={role} value={role}>
-                        {role}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition"
-                  >
-                    Invite
-                  </button>
+      {activeTab === 'General' && (
+        <div className="card">
+          <div className="card-header"><h2 className="text-sm font-semibold text-ink">Organization details</h2></div>
+          <div className="card-body">
+            {canManage ? (
+              <form onSubmit={handleSave} className="space-y-4 max-w-sm">
+                <div>
+                  <label className="label">Organization name</label>
+                  <input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} className="input" required />
                 </div>
+                <div>
+                  <label className="label">URL slug</label>
+                  <input type="text" value={formData.slug} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} className="input font-mono" pattern="[a-z0-9-]+" required />
+                </div>
+                <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">{saving ? 'Saving…' : 'Save changes'}</button>
               </form>
-            </div>
-          )}
-
-          {/* Members List */}
-          <div className="bg-white border border-gray-200 rounded overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Members</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {members.map((member) => (
-                <div key={member.id} className="px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {member.user.name || member.user.email}
-                    </div>
-                    <div className="text-sm text-gray-500">{member.user.email}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {canManage ? (
-                      <select
-                        value={member.role}
-                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                      >
-                        {roles.map((role) => (
-                          <option key={role} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded">
-                        {member.role}
-                      </span>
-                    )}
-                    {canManage && member.role !== 'OWNER' && (
-                      <button
-                        onClick={() => handleRemoveMember(member.id)}
-                        className="text-sm text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            ) : (
+              <p className="text-sm text-muted">Only owners and admins can modify organization settings.</p>
+            )}
           </div>
         </div>
       )}
-    </div>
+
+      {activeTab === 'Members' && (
+        <div className="card">
+          <div className="card-header flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink">Team members ({members.length})</h2>
+            <Link to="/team" className="text-sm text-accent hover:underline">Manage in Team page</Link>
+          </div>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map(m => {
+                  const user = m.user || {};
+                  return (
+                    <tr key={m.id}>
+                      <td className="font-medium">{user.name || user.email?.split('@')[0] || '—'}</td>
+                      <td className="cell-muted">{user.email || '—'}</td>
+                      <td><span className="badge badge-neutral">{m.role}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'Danger zone' && (
+        <div className="card border-danger/30">
+          <div className="card-header border-danger/20">
+            <h2 className="text-sm font-semibold text-danger">Danger zone</h2>
+          </div>
+          <div className="card-body">
+            <p className="text-sm text-muted mb-4">
+              Deleting this organization will permanently remove all associated data. This action cannot be undone.
+            </p>
+            <button onClick={() => setDeleteConfirm(true)} className="btn-danger">Delete organization</button>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={deleteConfirm}
+        onClose={() => { setDeleteConfirm(false); setDeleteInput(''); }}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete organization"
+        description=""
+        confirmLabel="Delete permanently"
+        confirmVariant="btn-danger"
+      >
+        <div className="space-y-3 -mt-2">
+          <p className="text-sm text-muted">
+            Type <span className="font-semibold text-ink">{organization.name}</span> to confirm deletion.
+          </p>
+          <input
+            type="text"
+            value={deleteInput}
+            onChange={e => setDeleteInput(e.target.value)}
+            placeholder={organization.name}
+            className="input"
+            autoFocus
+          />
+        </div>
+      </ConfirmModal>
+    </>
   );
 }

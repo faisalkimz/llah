@@ -1,199 +1,166 @@
 import { useState, useEffect } from 'react';
+import { Sliders } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Drawer from '../components/ui/Drawer.jsx';
 
 export default function Plans() {
   const { api } = useAuth();
+  const toast = useToast();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', active: true });
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadPlans();
-  }, []);
+  useEffect(() => { loadPlans(); }, []);
 
   async function loadPlans() {
     try {
       setLoading(true);
+      setError(null);
       const response = await api('/plans');
       if (response.success) {
         setPlans(Array.isArray(response.data) ? response.data : []);
+      } else {
+        setError(response.error?.message || 'Failed to load plans');
       }
     } catch (e) {
-      console.error('Failed to load plans:', e);
+      setError(e.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
   }
 
-  async function createPlan() {
+  async function handleCreate(e) {
+    e.preventDefault();
     if (!form.name.trim()) {
-      setError('Plan name is required');
+      setFormError('Plan name is required');
       return;
     }
-
     try {
-      setError('');
+      setFormError('');
+      setSaving(true);
       const response = await api('/plans', {
         method: 'POST',
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
       });
-
       if (response.success) {
         setForm({ name: '', description: '', active: true });
         setShowCreate(false);
+        toast.success('Plan created');
         loadPlans();
       } else {
-        setError(response.error.message);
+        setFormError(response.error?.message || 'Failed to create plan');
       }
     } catch (e) {
-      setError(e.message);
+      setFormError(e.message);
+    } finally {
+      setSaving(false);
     }
   }
 
+  const columns = [
+    { key: 'name', header: 'Name', render: v => <span className="font-medium text-ink">{v}</span> },
+    {
+      key: 'items',
+      header: 'Prices',
+      render: (v, row) => <span className="tabular-nums">{Array.isArray(row.items) ? row.items.length : '—'}</span>,
+    },
+    { key: 'active', header: 'Status', render: v => <StatusBadge status={v ? 'ACTIVE' : 'DISABLED'} /> },
+    { key: 'createdAt', header: 'Created', render: v => new Date(v).toLocaleDateString(), cellClassName: 'cell-muted' },
+  ];
+
   return (
     <>
-      <PageHeader 
-        title="Subscription Plans" 
+      <PageHeader
+        title="Subscription plans"
         description="Manage subscription plan bundles"
-        action={{
-          label: '+ Create Plan',
-          onClick: () => setShowCreate(true)
-        }}
+        action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Create plan</button>}
       />
 
-      {/* Create Form */}
-      {showCreate && (
-        <div className="llah-card p-6 mb-6">
-          <h3 className="font-semibold text-ink mb-4">Create New Plan</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">
-                Plan Name *
-              </label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., Starter Plan, Pro Plan"
-                className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">
-                Description
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Describe your plan..."
-                rows={3}
-                className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="plan-active"
-                checked={form.active}
-                onChange={(e) => setForm({ ...form, active: e.target.checked })}
-                className="h-4 w-4 text-ink border-line rounded focus:ring-ink"
-              />
-              <label htmlFor="plan-active" className="text-sm text-ink">
-                Active
-              </label>
-            </div>
-
-            {error && (
-              <div className="text-sm text-danger bg-danger/5 border border-danger/20 rounded-lg px-4 py-3">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={createPlan}
-                className="px-4 py-2 bg-ink text-white rounded-lg hover:bg-ink/90 transition-colors"
-              >
-                Create Plan
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreate(false);
-                  setError('');
-                  setForm({ name: '', description: '', active: true });
-                }}
-                className="px-4 py-2 border border-line rounded-lg hover:bg-neutral-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+      <div className="card">
+        {error && !loading && (
+          <div className="p-8 text-center">
+            <div className="text-danger mb-2">{error}</div>
+            <button onClick={loadPlans} className="btn-secondary">Retry</button>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <div className="col-span-full text-center py-12 text-muted">
-            Loading plans...
-          </div>
-        ) : plans.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="text-muted mb-4">No plans yet</div>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="text-sm text-ink hover:underline"
-            >
-              Create your first plan
-            </button>
-          </div>
-        ) : (
-          plans.map((plan) => (
-            <div key={plan.id} className="llah-card p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="font-semibold text-ink">{plan.name}</h3>
-                <span className={`text-xs font-medium px-2 py-1 rounded ${
-                  plan.active ? 'bg-success/10 text-success' : 'bg-neutral-100 text-muted'
-                }`}>
-                  {plan.active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              
-              {plan.description && (
-                <p className="text-sm text-muted mb-4">
-                  {plan.description}
-                </p>
-              )}
-
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-ink mb-1">
-                  Included Prices ({plan.items?.length || 0})
-                </div>
-                {plan.items && plan.items.length > 0 ? (
-                  plan.items.map((item, idx) => (
-                    <div key={idx} className="text-sm text-muted flex items-center gap-2">
-                      <span className="h-1 w-1 rounded-full bg-muted"></span>
-                      {item.price?.name || 'Unknown'}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-muted">No prices added</div>
-                )}
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-line text-xs text-muted">
-                Created {new Date(plan.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          ))
+        {!error && (
+          <DataTable
+            columns={columns}
+            data={plans}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={Sliders}
+                title="No plans yet"
+                description="Create subscription plans to bundle pricing tiers."
+                action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Create plan</button>}
+              />
+            }
+          />
         )}
       </div>
+
+      <Drawer
+        open={showCreate}
+        onClose={() => { setShowCreate(false); setFormError(''); }}
+        title="Create plan"
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="label">Plan name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              placeholder="e.g., Pro plan"
+              className="input"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="label">Description</label>
+            <textarea
+              value={form.description}
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              placeholder="Describe this plan..."
+              rows={3}
+              className="textarea"
+            />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={e => setForm({ ...form, active: e.target.checked })}
+              className="h-4 w-4 rounded border-line"
+            />
+            <span className="text-sm text-ink">Active</span>
+          </label>
+          {formError && (
+            <div className="text-sm text-danger bg-danger-muted border border-danger/20 rounded-md px-4 py-3">
+              {formError}
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
+              {saving ? 'Creating…' : 'Create plan'}
+            </button>
+            <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Drawer>
     </>
   );
 }

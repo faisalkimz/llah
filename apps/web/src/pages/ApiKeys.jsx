@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react';
+import { Code2, Eye, EyeOff, Copy, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import DataTable from '../components/ui/DataTable.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import Drawer from '../components/ui/Drawer.jsx';
+import { SkeletonTable } from '../components/ui/Skeleton.jsx';
 
 export default function ApiKeys() {
   const { api } = useAuth();
+  const toast = useToast();
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newKey, setNewKey] = useState({ name: '' });
+  const [newKeyName, setNewKeyName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
   const [generatedKey, setGeneratedKey] = useState(null);
-  const [error, setError] = useState('');
+  const [revokeConfirm, setRevokeConfirm] = useState(null);
+  const [revoking, setRevoking] = useState(false);
+  const [revealed, setRevealed] = useState({}); // id -> { key, timer }
 
   useEffect(() => {
     loadKeys();
@@ -29,247 +42,216 @@ export default function ApiKeys() {
     }
   }
 
-  async function createKey() {
-    if (!newKey.name.trim()) {
-      setError('API key name is required');
-      return;
-    }
-
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!newKeyName.trim()) { setCreateError('Key name is required'); return; }
     try {
-      setError('');
+      setCreateError('');
+      setCreating(true);
       const response = await api('/api-keys', {
         method: 'POST',
-        body: JSON.stringify(newKey)
+        body: JSON.stringify({ name: newKeyName.trim() }),
       });
-
       if (response.success) {
         setGeneratedKey(response.data);
-        setNewKey({ name: '' });
+        setNewKeyName('');
         setShowCreate(false);
         loadKeys();
       } else {
-        setError(response.error.message);
+        setCreateError(response.error?.message || 'Failed to generate key');
       }
     } catch (e) {
-      setError(e.message);
+      setCreateError(e.message);
+    } finally {
+      setCreating(false);
     }
   }
 
-  async function revokeKey(keyId) {
-    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
-      return;
-    }
-
+  async function handleRevoke() {
+    if (!revokeConfirm) return;
     try {
-      const response = await api(`/api-keys/${keyId}`, {
-        method: 'DELETE'
-      });
-
+      setRevoking(true);
+      const response = await api(`/api-keys/${revokeConfirm}`, { method: 'DELETE' });
       if (response.success) {
+        toast.success('API key revoked');
         loadKeys();
+      } else {
+        toast.error(response.error?.message || 'Failed to revoke key');
       }
     } catch (e) {
-      console.error('Failed to revoke key:', e);
+      toast.error(e.message || 'An error occurred');
+    } finally {
+      setRevoking(false);
+      setRevokeConfirm(null);
     }
   }
 
   function copyToClipboard(text) {
-    navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Copied to clipboard');
+    });
   }
+
+  function revealKey(id, keyStr) {
+    // Clear any existing timer for this key
+    if (revealed[id]?.timer) clearTimeout(revealed[id].timer);
+    const timer = setTimeout(() => {
+      setRevealed(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }, 30000);
+    setRevealed(prev => ({ ...prev, [id]: { key: keyStr, timer } }));
+  }
+
+  function hideKey(id) {
+    if (revealed[id]?.timer) clearTimeout(revealed[id].timer);
+    setRevealed(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  const columns = [
+    { key: 'name', header: 'Name', render: v => <span className="font-medium text-ink">{v}</span> },
+    {
+      key: 'prefix',
+      header: 'Key',
+      render: (v, row) => {
+        const isRevealed = !!revealed[row.id];
+        return (
+          <div className="flex items-center gap-2">
+            <code className="font-mono text-xs text-muted">
+              {isRevealed ? revealed[row.id].key : `llah_${v || 'live'}_${'•'.repeat(16)}`}
+            </code>
+            <button
+              onClick={e => { e.stopPropagation(); isRevealed ? hideKey(row.id) : revealKey(row.id, `llah_${v || 'live'}_${row.id}`); }}
+              className="btn-icon btn-sm"
+              aria-label={isRevealed ? 'Hide key' : 'Reveal key'}
+            >
+              {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            </button>
+            {isRevealed && (
+              <button
+                onClick={e => { e.stopPropagation(); copyToClipboard(revealed[row.id].key); }}
+                className="btn-icon btn-sm"
+                aria-label="Copy key"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        );
+      },
+    },
+    { key: 'createdAt', header: 'Created', render: v => new Date(v).toLocaleDateString(), cellClassName: 'cell-muted' },
+    { key: 'lastUsedAt', header: 'Last used', render: v => v ? new Date(v).toLocaleDateString() : 'Never', cellClassName: 'cell-muted' },
+    { key: 'status', header: 'Status', render: (v, row) => <StatusBadge status={row.revokedAt || v === 'REVOKED' ? 'REVOKED' : 'ACTIVE'} /> },
+    {
+      key: 'actions',
+      header: '',
+      render: (_, row) => !row.revokedAt && row.status !== 'REVOKED' ? (
+        <button
+          onClick={e => { e.stopPropagation(); setRevokeConfirm(row.id); }}
+          className="text-xs text-danger hover:underline"
+        >
+          Revoke
+        </button>
+      ) : null,
+    },
+  ];
 
   return (
     <>
-      <PageHeader 
-        title="API Keys" 
+      <PageHeader
+        title="API keys"
         description="Manage API keys for programmatic access"
-        action={{
-          label: '+ Generate API Key',
-          onClick: () => setShowCreate(true)
-        }}
+        action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Generate API key</button>}
       />
 
-      {/* Generated Key Alert */}
+      {/* Generated key banner */}
       {generatedKey && (
-        <div className="llah-card p-6 mb-6 border-2 border-success bg-success/5">
-          <div className="flex items-start gap-3 mb-4">
-            <svg className="h-6 w-6 text-success flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="flex-1">
-              <h3 className="font-semibold text-ink mb-1">API Key Generated Successfully!</h3>
-              <p className="text-sm text-muted mb-3">
-                Make sure to copy your API key now. You won't be able to see it again!
-              </p>
-              <div className="flex items-center gap-2 bg-white rounded-lg border p-3">
-                <code className="flex-1 text-sm font-mono text-ink break-all">
-                  {generatedKey.key}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(generatedKey.key)}
-                  className="px-3 py-1.5 text-sm font-medium text-ink bg-neutral-100 hover:bg-neutral-200 rounded transition-colors"
-                >
-                  Copy
-                </button>
+        <div className="card border-success mb-6">
+          <div className="card-body">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-ink mb-1">API key generated</p>
+                <p className="text-xs text-muted mb-3">Copy it now — you will not be able to see it again.</p>
+                <div className="flex items-center gap-2 bg-canvas-subtle rounded-md border border-line p-3">
+                  <code className="flex-1 text-xs font-mono text-ink break-all">{generatedKey.key}</code>
+                  <button
+                    onClick={() => copyToClipboard(generatedKey.key)}
+                    className="btn-secondary btn-sm flex-shrink-0"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={() => setGeneratedKey(null)}
-              className="text-muted hover:text-ink transition-colors"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Create Form */}
-      {showCreate && (
-        <div className="llah-card p-6 mb-6">
-          <h3 className="font-semibold text-ink mb-4">Generate New API Key</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-ink mb-2">
-                Name
-              </label>
-              <input
-                type="text"
-                value={newKey.name}
-                onChange={(e) => setNewKey({ ...newKey, name: e.target.value })}
-                placeholder="e.g., Production Key, Development Key"
-                className="w-full px-4 py-2 border border-line rounded-lg focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/10"
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-danger bg-danger/5 border border-danger/20 rounded-lg px-4 py-3">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={createKey}
-                className="px-4 py-2 bg-ink text-white rounded-lg hover:bg-ink/90 transition-colors"
-              >
-                Generate Key
-              </button>
-              <button
-                onClick={() => {
-                  setShowCreate(false);
-                  setError('');
-                  setNewKey({ name: '' });
-                }}
-                className="px-4 py-2 border border-line rounded-lg hover:bg-neutral-50 transition-colors"
-              >
-                Cancel
+              <button onClick={() => setGeneratedKey(null)} className="btn-icon btn-sm" aria-label="Dismiss">
+                <span aria-hidden="true">&times;</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Keys List */}
-      <div className="llah-card">
-        <div className="overflow-x-auto">
-          <table className="llah-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Key</th>
-                <th>Created</th>
-                <th>Last Used</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-8 text-muted">
-                    Loading API keys...
-                  </td>
-                </tr>
-              ) : keys.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-8">
-                    <div className="text-muted mb-2">No API keys yet</div>
-                    <button
-                      onClick={() => setShowCreate(true)}
-                      className="text-sm text-ink hover:underline"
-                    >
-                      Generate your first API key
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                keys.map((key) => (
-                  <tr key={key.id}>
-                    <td className="font-medium">{key.name}</td>
-                    <td>
-                      <code className="text-xs bg-neutral-100 px-2 py-1 rounded">
-                        llah_{key.prefix}_...
-                      </code>
-                    </td>
-                    <td className="text-muted">
-                      {new Date(key.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="text-muted">
-                      {key.lastUsedAt 
-                        ? new Date(key.lastUsedAt).toLocaleDateString()
-                        : 'Never'
-                      }
-                    </td>
-                    <td>
-                      {key.status !== 'ACTIVE' || key.revokedAt ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-danger bg-danger/10 px-2 py-1 rounded">
-                          <span className="h-1.5 w-1.5 rounded-full bg-danger"></span>
-                          Revoked
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded">
-                          <span className="h-1.5 w-1.5 rounded-full bg-success"></span>
-                          Active
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {key.status === 'ACTIVE' && !key.revokedAt && (
-                        <button
-                          onClick={() => revokeKey(key.id)}
-                          className="text-sm text-danger hover:underline"
-                        >
-                          Revoke
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Info card */}
+      <div className="card bg-info-muted border-info/20 mb-6">
+        <div className="card-body text-sm text-info">
+          Keep your API keys secure. Never commit them to version control. Use environment variables.
         </div>
       </div>
 
-      {/* Info Box */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex gap-3">
-          <svg className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="card">
+        <DataTable
+          columns={columns}
+          data={keys}
+          loading={loading}
+          emptyState={
+            <EmptyState
+              icon={Code2}
+              title="No API keys yet"
+              description="Generate your first API key for programmatic access."
+              action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Generate API key</button>}
+            />
+          }
+        />
+      </div>
+
+      <Drawer open={showCreate} onClose={() => { setShowCreate(false); setCreateError(''); }} title="Generate API key">
+        <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">API Key Security</h4>
-            <p className="text-sm text-blue-800">
-              Keep your API keys secure. Never share them or commit them to version control.
-              Use environment variables to store keys in your applications.
-            </p>
+            <label className="label">Key name</label>
+            <input
+              type="text"
+              value={newKeyName}
+              onChange={e => setNewKeyName(e.target.value)}
+              placeholder="e.g., Production key"
+              className="input"
+              autoFocus
+            />
           </div>
-        </div>
-      </div>
+          {createError && <div className="text-sm text-danger bg-danger-muted border border-danger/20 rounded-md px-4 py-3">{createError}</div>}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={creating} className="btn-primary disabled:opacity-50">{creating ? 'Generating…' : 'Generate key'}</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </Drawer>
+
+      <ConfirmModal
+        open={!!revokeConfirm}
+        onClose={() => setRevokeConfirm(null)}
+        onConfirm={handleRevoke}
+        loading={revoking}
+        title="Revoke API key"
+        description="Revoke this API key? Any applications using it will stop working. This cannot be undone."
+        confirmLabel="Revoke key"
+        confirmVariant="btn-danger"
+      />
     </>
   );
 }
