@@ -18,7 +18,7 @@ Read these files in order:
 - Never create `.ts` or `.tsx` files.
 - Web uses React + Vite + Tailwind CSS.
 - API uses Express on Node.js.
-- Database is Neon PostgreSQL through Prisma.
+- Database is PostgreSQL through Prisma (local for dev, Supabase for production).
 - Mobile uses Expo React Native + NativeWind.
 - Do not replace Tailwind with Material UI, Chakra, Ant, Bootstrap or a generated component system.
 - Small focused libraries are acceptable when they solve a real need.

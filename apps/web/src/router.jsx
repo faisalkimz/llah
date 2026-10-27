@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import Terms from './pages/Terms.jsx';
+import Onboarding from './pages/Onboarding.jsx';
 
 /* ── Authenticated pages (lazy-loaded) ── */
 const Dashboard            = lazy(() => import('./pages/Dashboard.jsx'));
@@ -122,6 +123,7 @@ export const router = createBrowserRouter([
   { path: '/reset-password', element: <ResetPassword /> },
   { path: '/privacy', element: <PrivacyPolicy /> },
   { path: '/terms', element: <Terms /> },
+  { path: '/onboarding', element: <Onboarding /> },
   {
     element: (
       <ProtectedRoute>

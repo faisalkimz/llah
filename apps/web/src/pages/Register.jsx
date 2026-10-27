@@ -43,7 +43,7 @@ export default function Register() {
         emailVerified: payload.emailVerified || false
       });
       
-      nav('/dashboard');
+      nav('/onboarding');
     } catch (e) {
       setError(friendlyError(e));
     } finally {

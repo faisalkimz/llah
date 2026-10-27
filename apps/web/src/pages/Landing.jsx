@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Zap, DollarSign, FileText, BarChart3, Shield, Code2,
-  ArrowRight, Check, Menu, X,
+  ArrowRight, Check, Menu, X, Sun, Moon,
   Activity, Layers, CreditCard, Bell, Key, Lock, GitBranch
 } from 'lucide-react';
 import HeroScene from '../components/marketing/HeroScene.jsx';
@@ -109,6 +109,19 @@ function HeroAuroraBackground() {
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dark, setDark] = useState(() => {
+    try { return localStorage.getItem('theme') === 'dark'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -221,6 +234,14 @@ export default function Landing() {
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
+              <button
+                onClick={() => setDark(v => !v)}
+                className="flex items-center justify-center rounded-full p-2 text-muted transition-colors hover:bg-neutral-100 hover:text-ink"
+                aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                id="nav-dark-toggle"
+              >
+                {dark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
               <Link to="/login" className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-ink transition-colors hover:bg-neutral-100" id="nav-signin">
                 Sign in
               </Link>

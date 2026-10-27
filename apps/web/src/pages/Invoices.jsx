@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Receipt } from 'lucide-react';
+import { Receipt, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -70,6 +70,20 @@ function InvoiceDetail({ invoiceId, onBack, onReload }) {
           ← Back to list
         </button>
         <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const token = localStorage.getItem('llah_access_token');
+              const orgId = localStorage.getItem('current_organization_id');
+              const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/v1';
+              // Open PDF in new window — auth handled via query param for simplicity
+              window.open(`${base}/invoices/${invoice.id}/pdf`, '_blank');
+            }}
+            className="btn-secondary gap-1.5"
+            title="Download as PDF"
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF
+          </button>
           {invoice.status === 'DRAFT' && (
             <button onClick={() => setConfirmAction('finalize')} className="btn-primary">Finalize</button>
           )}

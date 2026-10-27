@@ -7,7 +7,7 @@ This repository is intentionally **code-first**. It gives a coding agent the com
 ## Locked Stack
 - Web: React + Vite + JavaScript + Tailwind CSS
 - API: Node.js + Express + JavaScript
-- Database: Neon Serverless PostgreSQL + Prisma ORM
+- Database: PostgreSQL + Prisma ORM
 - Mobile: React Native + Expo + JavaScript + NativeWind
 - API style: REST
 - Icons: Lucide / lucide-react / lucide-react-native

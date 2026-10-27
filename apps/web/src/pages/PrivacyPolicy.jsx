@@ -74,7 +74,7 @@ export default function PrivacyPolicy() {
 
           <h2>4. Data Storage and Security</h2>
           <p>
-            Your data is stored in a PostgreSQL database hosted on Neon. Passwords are hashed using bcrypt. Authentication tokens are signed using JWTs with appropriate expiration periods.
+            Your data is stored in a PostgreSQL database. Passwords are hashed using bcrypt. Authentication tokens are signed using JWTs with appropriate expiration periods.
           </p>
           <p>
             We implement security measures including rate limiting, CORS policies, HTTP security headers, and role-based access controls. Session tokens can be revoked individually.

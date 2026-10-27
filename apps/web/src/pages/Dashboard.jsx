@@ -4,12 +4,13 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { api } from '../lib/api';
+import { useRealtimeFeed } from '../lib/ws.js';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton.jsx';
-import { Building2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Building2, CheckCircle2, AlertTriangle, Radio, Trash2 } from 'lucide-react';
 
 function fmt(minor) {
   const n = typeof minor === 'bigint' ? Number(minor) : Number(minor || 0);
@@ -348,6 +349,73 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Real-time Usage Feed */}
+      <RealtimeFeed organizationId={organizationId} />
     </>
+  );
+}
+
+function RealtimeFeed({ organizationId }) {
+  const { events, connected, clearEvents } = useRealtimeFeed({ orgId: organizationId });
+
+  return (
+    <div className="card mt-6">
+      <div className="card-header flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Radio className="h-4 w-4 text-muted" strokeWidth={1.5} />
+          <h3 className="font-semibold text-ink">Real-time usage feed</h3>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+            connected ? 'text-success' : 'text-muted'
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${
+              connected ? 'bg-success animate-pulse' : 'bg-muted'
+            }`} />
+            {connected ? 'Live' : 'Connecting...'}
+          </span>
+        </div>
+        {events.length > 0 && (
+          <button
+            onClick={clearEvents}
+            className="btn-icon btn-sm text-muted hover:text-danger"
+            title="Clear feed"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <div className="max-h-64 overflow-y-auto">
+        {events.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted">
+            {connected
+              ? 'Waiting for usage events... Send events via the API to see them appear here in real time.'
+              : 'Connecting to real-time feed...'}
+          </div>
+        ) : (
+          <div className="divide-y divide-line">
+            {events.map((evt, idx) => (
+              <div key={evt.data?.id || idx} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-canvas-subtle">
+                <span className="h-2 w-2 rounded-full bg-accent flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-ink">{evt.type}</span>
+                  {evt.data?.customerId && (
+                    <span className="text-muted ml-2">customer: <span className="font-mono text-xs">{evt.data.customerId.slice(0, 12)}…</span></span>
+                  )}
+                  {evt.data?.meterId && (
+                    <span className="text-muted ml-2">meter: <span className="font-mono text-xs">{evt.data.meterId}</span></span>
+                  )}
+                  {evt.data?.quantity != null && (
+                    <span className="text-muted ml-2">qty: <span className="font-semibold text-ink">{evt.data.quantity}</span></span>
+                  )}
+                </div>
+                <span className="text-xs text-muted tabular-nums flex-shrink-0">
+                  {new Date(evt.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

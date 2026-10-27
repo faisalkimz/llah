@@ -20,7 +20,7 @@
 - Node.js 22+
 - Express
 - Prisma Client
-- Neon PostgreSQL
+- PostgreSQL (local dev, Supabase for production)
 - Zod
 - jose for JWT
 - bcryptjs for passwords

@@ -10,6 +10,6 @@
 - secrets excluded from logs
 - audit trail for security/financial changes
 - dependency and secret scanning in CI
-- least-privilege Neon credentials
+- least-privilege database credentials
 - backups tested, not merely configured
 - production HTTPS only

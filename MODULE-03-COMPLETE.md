@@ -180,7 +180,7 @@ Backend tests exist at `apps/api/tests/organizations.test.js` with 26 passing te
 - Role-based permissions
 - Edge cases (last owner, duplicates)
 
-⚠️ **Database Issue**: Neon connection still timing out, so end-to-end testing blocked by infrastructure, not code.
+✅ **Database**: Using local PostgreSQL for development.
 
 ## Files Created/Modified
 
@@ -218,8 +218,8 @@ Module 03 is production-ready except for:
 6. **Audit Trail** - Log all membership/role changes
 
 ### Database
-Once Neon connection is resolved:
-- Run `npx prisma db push` to sync schema
+Using local PostgreSQL:
+- Run `npx prisma db push --schema prisma/schema.prisma` to sync schema
 - Test auth registration (auto-creates org)
 - Test org creation, member invites, role updates
 - Verify permission checks work end-to-end

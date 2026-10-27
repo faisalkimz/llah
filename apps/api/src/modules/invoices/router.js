@@ -2,9 +2,21 @@ import { Router } from 'express';
 import { requireOrg } from '../../middleware/require-org.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
+import { generateInvoiceHtml } from './pdf.js';
 
 const router = Router();
 router.use(requireOrg);
+
+// PDF export — returns printable HTML
+router.get('/:invoiceId/pdf', async (req, res) => {
+  try {
+    const html = await generateInvoiceHtml(req.params.invoiceId, req.organizationId);
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(html);
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: { code: 'INTERNAL_ERROR', message: err.message } });
+  }
+});
 
 router.post('/', async (req, res) => {
   try {

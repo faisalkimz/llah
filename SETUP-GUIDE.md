@@ -4,7 +4,7 @@
 
 - Node.js 22+ installed
 - npm installed
-- Neon PostgreSQL database (free tier available at https://neon.tech)
+- PostgreSQL installed locally (or use Docker)
 
 ## Initial Setup
 
@@ -18,7 +18,23 @@ npm install
 
 This will install dependencies for all workspaces (api, web, mobile).
 
-### 2. Configure Environment
+### 2. Set Up Local PostgreSQL
+
+**Option A — Direct install:**
+
+Install PostgreSQL from https://www.postgresql.org/download/ and create a database:
+
+```bash
+createdb llah
+```
+
+**Option B — Docker:**
+
+```bash
+docker run -d --name llah-postgres -p 5432:5432 -e POSTGRES_PASSWORD=yourpassword -e POSTGRES_DB=llah postgres:16
+```
+
+### 3. Configure Environment
 
 Create your API environment file:
 
@@ -33,8 +49,8 @@ NODE_ENV=development
 PORT=4000
 WEB_URL=http://localhost:5173
 
-# Get from Neon console - use pooled connection string
-DATABASE_URL=postgresql://USER:PASSWORD@YOUR_NEON_HOST/neondb?sslmode=require
+# Local PostgreSQL connection
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/llah
 
 # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 JWT_ACCESS_SECRET=your-32-plus-character-secret-here
@@ -54,7 +70,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-### 3. Set up Database
+### 4. Set up Database
 
 Generate Prisma Client:
 
@@ -62,15 +78,19 @@ Generate Prisma Client:
 npm run prisma:generate
 ```
 
-Run migrations to create database tables:
+Push schema to your local database:
+
+```bash
+npx prisma db push --schema prisma/schema.prisma
+```
+
+Or run migrations:
 
 ```bash
 npm run prisma:migrate
 ```
 
-You'll be prompted to name the migration. Use: `init`
-
-### 4. Start Development Servers
+### 5. Start Development Servers
 
 **Terminal 1 - API Server:**
 ```bash
@@ -86,11 +106,6 @@ npm run dev:web
 
 The web app will run on `http://localhost:5173`
 
-**Optional - Mobile App:**
-```bash
-npm run dev:mobile
-```
-
 ## Testing the Authentication Module
 
 ### 1. Register a New Account
@@ -101,7 +116,7 @@ npm run dev:mobile
    - Email: test@example.com
    - Password: securepassword123 (min 10 characters)
 3. Click "Create account"
-4. You'll be automatically logged in and redirected to the dashboard
+4. Complete the onboarding wizard to set up your workspace
 
 ### 2. Check Tokens
 
@@ -129,26 +144,6 @@ Option B - Manual test:
 4. Click "Revoke" on a session to log out that device
 5. Click "Revoke all sessions" to log out everywhere
 
-### 5. Test Password Reset
-
-1. Navigate to `http://localhost:5173/forgot-password`
-2. Enter your email
-3. Click "Send reset link"
-4. In development mode, a reset token will be displayed
-5. Click the link or navigate to `/reset-password?token=...`
-6. Enter new password
-7. Password is reset, all sessions are invalidated
-8. Login with new password
-
-### 6. Test Email Verification
-
-1. Navigate to `http://localhost:5173/verify-email`
-2. Click "Send verification email"
-3. In development mode, a verification token will be displayed
-4. Enter your email and the token
-5. Click "Verify Email"
-6. Email is marked as verified
-
 ## Running Tests
 
 ```bash
@@ -170,8 +165,8 @@ npm run test -- --watch
 ### Database Connection Failed
 
 - Verify your `DATABASE_URL` is correct
-- Make sure you're using the **pooled** connection string from Neon
-- Check that your Neon database is active (free tier databases may sleep)
+- Make sure PostgreSQL is running on the expected port
+- Check that the database exists (`createdb llah` or via Docker)
 
 ### Prisma Client Not Generated
 
@@ -222,50 +217,24 @@ curl http://localhost:4000/health
 
 Should return: `{"status":"ok","service":"llah-api"}`
 
-### View Logs
-
-The API uses Pino for structured logging. Logs appear in the terminal running the API server.
-
 ### Reset Database
 
 **⚠️ WARNING: This deletes all data**
 
 ```bash
-# Delete all data
 npx prisma migrate reset --schema prisma/schema.prisma
-
-# Or manually
-npm run prisma:migrate -- --create-only
-# Then edit the migration to add DROP statements
-npm run prisma:migrate
 ```
 
-## Next Steps
+## Production Notes
 
-After verifying authentication works:
-
-1. Module 03 - Organizations, Members & RBAC will be implemented next
-2. Users will be able to create workspaces
-3. Invite team members with role-based permissions
-4. Organization-scoped data isolation
-
-## Production Checklist
-
-Before deploying to production:
-
-- [ ] Use strong, randomly generated JWT secrets (64+ characters)
-- [ ] Set `NODE_ENV=production`
-- [ ] Use production Neon database (not development branch)
-- [ ] Enable connection pooling
-- [ ] Set up email service for verification/reset emails
-- [ ] Move token storage from memory to Redis
-- [ ] Configure rate limiting per endpoint
-- [ ] Set up error monitoring (Sentry, etc.)
-- [ ] Configure CORS for production domain
-- [ ] Enable HTTPS only
-- [ ] Set secure cookie flags
-- [ ] Configure backup strategy
-- [ ] Add session device/IP tracking
-- [ ] Set up audit logging
-- [ ] Configure CDN for web assets
-- [ ] Enable database encryption at rest
+When deploying to production (Supabase):
+- Update `DATABASE_URL` to your Supabase connection string
+- Use strong, randomly generated JWT secrets (64+ characters)
+- Set `NODE_ENV=production`
+- Enable connection pooling
+- Set up email service for verification/reset emails
+- Move token storage from memory to Redis
+- Configure rate limiting per endpoint
+- Set up error monitoring (Sentry, etc.)
+- Configure CORS for production domain
+- Enable HTTPS only
