@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { requireMinRole } from '../../middleware/rbac.js';
+import { requireAdminAnywhere } from '../../middleware/rbac.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
 
-// Feature flags are platform-wide. Any authenticated user can read.
-// Only admins can mutate.
+// Feature flags are platform-wide — no organizationId column on FeatureFlag.
+// Any authenticated user can READ flags (applied in routes.js via requireAuth).
+// Only platform super-admins (requireAdminAnywhere) can CREATE, UPDATE, or DELETE flags.
 const router = Router();
 
 router.get('/', async (req, res, next) => {
