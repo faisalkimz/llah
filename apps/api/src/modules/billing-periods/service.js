@@ -3,6 +3,9 @@ import * as repo from './repository.js';
 import * as invoicesRepo from '../invoices/repository.js';
 import { buildInvoiceNumber } from '../invoices/service.js';
 import { aggregateUsage } from '../usage-aggregation/service.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
 
 export async function listBillingPeriods(organizationId, filters) {
   return await repo.findBillingPeriodsByOrganization(organizationId, filters);
@@ -175,6 +178,10 @@ export async function closeBillingPeriod(orgId, subscriptionId) {
     }
 
     // 7. Return the invoice
+    Promise.allSettled([
+      dispatchEvent(orgId, 'invoice.created', randomUUID(), { id: invoice.id, organizationId: orgId, customerId: invoice.customerId, number: invoice.number, status: invoice.status, totalMinor: String(invoice.totalMinor) }),
+      createNotification(orgId, { type: 'INVOICE_CREATED', title: `Invoice ${invoice.number} created`, message: `Invoice ${invoice.number} has been created for billing period close.`, metadata: { invoiceId: invoice.id, subscriptionId } })
+    ]).catch(() => {});
     return invoice;
   });
 }

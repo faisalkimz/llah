@@ -1,4 +1,8 @@
 import * as repo from './repository.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
+import { logEvent } from '../event-log/service.js';
 
 /**
  * Generate the next invoice number for an org.
@@ -41,7 +45,7 @@ export async function createInvoice(organizationId, invoiceData) {
   const lastNumber = await repo.findLastInvoiceNumber(organizationId);
   const invoiceNumber = buildInvoiceNumber(organizationId, lastNumber);
 
-  return await repo.createInvoice({
+  const invoice = await repo.createInvoice({
     ...rest,
     organizationId,
     number: invoiceNumber,
@@ -55,6 +59,11 @@ export async function createInvoice(organizationId, invoiceData) {
       amountMinor: BigInt(Math.floor(Number(line.quantity))) * BigInt(line.unitAmountMinor)
     }))
   });
+  Promise.allSettled([
+    dispatchEvent(organizationId, 'invoice.created', randomUUID(), { id: invoice.id, organizationId, customerId: invoice.customerId, number: invoice.number, status: invoice.status, currency: invoice.currency, totalMinor: String(invoice.totalMinor) }),
+    createNotification(organizationId, { type: 'INVOICE_CREATED', title: `Invoice ${invoice.number} created`, message: `Invoice ${invoice.number} has been created.`, metadata: { invoiceId: invoice.id, number: invoice.number } })
+  ]).catch(() => {});
+  return invoice;
 }
 
 export async function listInvoices(organizationId, filters) {
@@ -105,10 +114,16 @@ export async function finalizeInvoice(invoiceId, organizationId) {
     err.status = 422;
     throw err;
   }
-  return await repo.updateInvoice(invoiceId, organizationId, {
+  const finalized = await repo.updateInvoice(invoiceId, organizationId, {
     status: 'OPEN',
     issuedAt: new Date()
   });
+  Promise.allSettled([
+    dispatchEvent(organizationId, 'invoice.finalized', randomUUID(), { id: finalized.id, organizationId, customerId: finalized.customerId, number: finalized.number, status: 'OPEN' }),
+    createNotification(organizationId, { type: 'INVOICE_CREATED', title: `Invoice ${finalized.number} finalized`, message: `Invoice ${finalized.number} has been finalized and is now open.`, metadata: { invoiceId: finalized.id } }),
+    logEvent(organizationId, null, { action: 'invoice.finalize', targetType: 'Invoice', targetId: invoiceId, metadata: { number: finalized.number } })
+  ]).catch(() => {});
+  return finalized;
 }
 
 /**
@@ -127,7 +142,13 @@ export async function voidInvoice(invoiceId, organizationId) {
     err.status = 422;
     throw err;
   }
-  return await repo.updateInvoice(invoiceId, organizationId, {
+  const voided = await repo.updateInvoice(invoiceId, organizationId, {
     status: 'VOID'
   });
+  Promise.allSettled([
+    dispatchEvent(organizationId, 'invoice.voided', randomUUID(), { id: voided.id, organizationId, customerId: voided.customerId, number: voided.number, status: 'VOID' }),
+    createNotification(organizationId, { type: 'SYSTEM', title: `Invoice ${voided.number} voided`, message: `Invoice ${voided.number} has been voided.`, metadata: { invoiceId: voided.id } }),
+    logEvent(organizationId, null, { action: 'invoice.void', targetType: 'Invoice', targetId: invoiceId, metadata: { number: voided.number } })
+  ]).catch(() => {});
+  return voided;
 }

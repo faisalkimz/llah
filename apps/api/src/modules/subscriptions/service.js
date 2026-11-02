@@ -1,5 +1,8 @@
 import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
 
 export async function createSubscription(organizationId, subscriptionData) {
   return await repo.createSubscription({
@@ -41,15 +44,21 @@ export async function cancelSubscription(subscriptionId, organizationId, immedia
     throw error;
   }
 
+  let updated;
   if (immediate) {
-    return await repo.updateSubscription(subscriptionId, organizationId, {
+    updated = await repo.updateSubscription(subscriptionId, organizationId, {
       status: 'CANCELED',
     });
   } else {
-    return await repo.updateSubscription(subscriptionId, organizationId, {
+    updated = await repo.updateSubscription(subscriptionId, organizationId, {
       cancelAtPeriodEnd: true,
     });
   }
+  Promise.allSettled([
+    dispatchEvent(organizationId, 'subscription.canceled', randomUUID(), { subscriptionId, organizationId, customerId: subscription.customerId, immediate }),
+    createNotification(organizationId, { type: 'SUBSCRIPTION_CANCELED', title: immediate ? 'Subscription canceled' : 'Subscription scheduled for cancellation', message: immediate ? 'Your subscription has been canceled.' : 'Your subscription will be canceled at the end of the current period.', metadata: { subscriptionId } })
+  ]).catch(() => {});
+  return updated;
 }
 
 /**
@@ -131,9 +140,14 @@ export async function renewSubscription(subscriptionId) {
   const newPeriodStart = new Date(subscription.currentPeriodEnd);
   const newPeriodEnd = advanceDate(newPeriodStart, interval, intervalCount);
 
-  return await repo.updateSubscription(subscriptionId, subscription.organizationId, {
+  const renewed = await repo.updateSubscription(subscriptionId, subscription.organizationId, {
     currentPeriodStart: newPeriodStart,
     currentPeriodEnd: newPeriodEnd,
     status: 'ACTIVE',
   });
+  Promise.allSettled([
+    dispatchEvent(subscription.organizationId, 'subscription.renewed', randomUUID(), { subscriptionId, organizationId: subscription.organizationId, customerId: subscription.customerId }),
+    createNotification(subscription.organizationId, { type: 'SUBSCRIPTION_RENEWED', title: 'Subscription renewed', message: 'Your subscription has been renewed for the next billing period.', metadata: { subscriptionId } })
+  ]).catch(() => {});
+  return renewed;
 }

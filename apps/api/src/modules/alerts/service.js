@@ -1,5 +1,8 @@
 import prisma from '../../lib/prisma.js';
 import * as revenueService from '../revenue/service.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
 
 export async function createAlertRule(orgId, data) {
   return prisma.alertRule.create({
@@ -156,10 +159,14 @@ export async function evaluateAlerts(orgId) {
           where: { alertRuleId: rule.id, resolvedAt: null },
         });
         if (!existing) {
-          await prisma.alertFiring.create({
+          const firing = await prisma.alertFiring.create({
             data: { alertRuleId: rule.id, value: currentValue },
           });
           fired++;
+          Promise.allSettled([
+            dispatchEvent(orgId, 'alert.fired', randomUUID(), { firingId: firing.id, alertRuleId: rule.id, ruleName: rule.name, value: currentValue }),
+            createNotification(orgId, { type: 'ALERT_FIRED', title: `Alert fired: ${rule.name}`, message: `Alert rule "${rule.name}" triggered with value ${currentValue}.`, metadata: { firingId: firing.id, alertRuleId: rule.id } })
+          ]).catch(() => {});
         }
       }
     } catch {

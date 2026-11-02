@@ -1,6 +1,7 @@
 import * as orgRepository from './repository.js';
 import * as membershipRepository from './membership-repository.js';
 import { slugSchema } from './validators.js';
+import { logEvent } from '../event-log/service.js';
 
 /**
  * Organization and membership business logic
@@ -212,11 +213,13 @@ async function inviteMember(inviterId, organizationId, inviteeUserId, role) {
     }
   }
 
-  return membershipRepository.create({
+  const membership = await membershipRepository.create({
     userId: inviteeUserId,
     organizationId,
     role,
   });
+  logEvent(organizationId, inviterId, { action: 'member.invite', targetType: 'Membership', targetId: membership.id, metadata: { inviteeUserId, role } }).catch(() => {});
+  return membership;
 }
 
 /**
@@ -262,7 +265,9 @@ async function updateMemberRole(requesterId, membershipId, newRole) {
     }
   }
 
-  return membershipRepository.updateRole(membershipId, newRole);
+  const updated = await membershipRepository.updateRole(membershipId, newRole);
+  logEvent(membership.organizationId, requesterId, { action: 'member.role.update', targetType: 'Membership', targetId: membership.id, metadata: { userId: membership.userId, oldRole: membership.role, newRole } }).catch(() => {});
+  return updated;
 }
 
 /**
@@ -305,7 +310,9 @@ async function removeMember(requesterId, membershipId) {
     }
   }
 
-  return membershipRepository.deleteById(membershipId);
+  const deleted = await membershipRepository.deleteById(membershipId);
+  logEvent(membership.organizationId, requesterId, { action: 'member.remove', targetType: 'Membership', targetId: membership.id, metadata: { userId: membership.userId } }).catch(() => {});
+  return deleted;
 }
 
 /**

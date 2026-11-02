@@ -1,5 +1,9 @@
 import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
+import { logEvent } from '../event-log/service.js';
 
 // Valid status transitions.
 // SUCCEEDED can transition to REFUNDED / PARTIALLY_REFUNDED (via the refund pipeline).
@@ -89,6 +93,16 @@ export async function updatePayment(paymentId, organizationId, updates) {
 
     return result;
   });
+
+  if (status === 'SUCCEEDED' || status === 'FAILED') {
+    const evtType = status === 'SUCCEEDED' ? 'payment.succeeded' : 'payment.failed';
+    const notifType = status === 'SUCCEEDED' ? 'INVOICE_PAID' : 'PAYMENT_FAILED';
+    Promise.allSettled([
+      dispatchEvent(organizationId, evtType, randomUUID(), { id: updated.id, organizationId, invoiceId: updated.invoiceId, amountMinor: String(updated.amountMinor), currency: updated.currency, status }),
+      createNotification(organizationId, { type: notifType, title: `Payment ${status === 'SUCCEEDED' ? 'succeeded' : 'failed'}`, message: `Payment of ${String(updated.amountMinor)} ${status === 'SUCCEEDED' ? 'succeeded' : 'failed'}.`, metadata: { paymentId: updated.id, invoiceId: updated.invoiceId } }),
+      logEvent(organizationId, null, { action: evtType, targetType: 'Payment', targetId: updated.id, metadata: { invoiceId: updated.invoiceId } })
+    ]).catch(() => {});
+  }
 
   return updated;
 }

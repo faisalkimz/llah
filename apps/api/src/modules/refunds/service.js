@@ -2,6 +2,9 @@ import prisma from '../../lib/prisma.js';
 import * as repo from './repository.js';
 import * as paymentsRepo from '../payments/repository.js';
 import * as ledgerRepo from '../ledger/repository.js';
+import { randomUUID } from 'node:crypto';
+import { dispatchEvent } from '../webhooks-outbound/service.js';
+import { createNotification } from '../notifications/service.js';
 
 /**
  * createRefund
@@ -119,6 +122,11 @@ export async function createRefund(orgId, { paymentId, amountMinor, reason }) {
 
     return newRefund;
   });
+
+  Promise.allSettled([
+    dispatchEvent(orgId, 'refund.created', randomUUID(), { id: refund.id, paymentId: refund.paymentId, amountMinor: String(refund.amountMinor), reason: refund.reason, status: refund.status }),
+    createNotification(orgId, { type: 'REFUND_ISSUED', title: 'Refund issued', message: `A refund of ${String(refund.amountMinor)} has been issued.`, metadata: { refundId: refund.id, paymentId: refund.paymentId } })
+  ]).catch(() => {});
 
   return refund;
 }
