@@ -336,6 +336,7 @@ function ApiKeyStep({ onNext, onBack, orgId }) {
     try {
       const res = await api('/api-keys', {
         method: 'POST',
+        headers: orgId ? { 'x-organization-id': orgId } : undefined,
         body: JSON.stringify({ name: keyName.trim() || 'Development' })
       });
 
