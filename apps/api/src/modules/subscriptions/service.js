@@ -5,10 +5,20 @@ import { dispatchEvent } from '../webhooks-outbound/service.js';
 import { createNotification } from '../notifications/service.js';
 
 export async function createSubscription(organizationId, subscriptionData) {
+  const { planId, currentPeriodStart: _cps, currentPeriodEnd: _cpe, ...rest } = subscriptionData;
+  const plan = planId ? await prisma.plan.findUnique({ where: { id: planId } }) : null;
+  const now = new Date();
+  const interval = plan?.interval || 'MONTH';
+  const intervalCount = plan?.intervalCount || 1;
+  const periodStart = now;
+  const periodEnd = advanceDate(now, interval, intervalCount);
   return await repo.createSubscription({
-    ...subscriptionData,
+    ...rest,
     organizationId,
+    planId,
     status: 'ACTIVE',
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
   });
 }
 
@@ -59,6 +69,23 @@ export async function cancelSubscription(subscriptionId, organizationId, immedia
     createNotification(organizationId, { type: 'SUBSCRIPTION_CANCELED', title: immediate ? 'Subscription canceled' : 'Subscription scheduled for cancellation', message: immediate ? 'Your subscription has been canceled.' : 'Your subscription will be canceled at the end of the current period.', metadata: { subscriptionId } })
   ]).catch(() => {});
   return updated;
+}
+
+/**
+ * Find all ACTIVE subscriptions past their period end (not flagged for
+ * cancellation) and renew them by advancing the billing period.
+ */
+export async function processActiveSubscriptionRenewals() {
+  const now = new Date();
+  const due = await prisma.subscription.findMany({
+    where: {
+      status: 'ACTIVE',
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: { lt: now },
+    },
+    select: { id: true, organizationId: true },
+  });
+  return await Promise.all(due.map(({ id }) => renewSubscription(id)));
 }
 
 /**

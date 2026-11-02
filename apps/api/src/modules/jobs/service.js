@@ -46,6 +46,10 @@ export async function processExpiredSubscriptions(orgId) {
   return runJob('processExpiredSubscriptions', () => subscriptionsService.processExpiredSubscriptions(), orgId);
 }
 
+export async function processSubscriptionRenewals(orgId) {
+  return runJob('process-subscription-renewals', () => subscriptionsService.processActiveSubscriptionRenewals(), orgId);
+}
+
 export async function runBillingPeriodClose(orgId, subscriptionId) {
   return runJob('closeBillingPeriod', () => billingPeriodsService.closeBillingPeriod(orgId, subscriptionId), orgId);
 }

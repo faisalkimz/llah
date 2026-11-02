@@ -39,6 +39,16 @@ router.post('/subscriptions/process-expired', async (req, res, next) => {
   }
 });
 
+// Trigger: process active subscription renewals (renew ACTIVE subs past period end)
+router.post('/subscriptions/renew-expired', async (req, res, next) => {
+  try {
+    const data = await service.processSubscriptionRenewals(req.organizationId);
+    res.status(201).json({ data });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Trigger: close billing period for a subscription
 router.post('/billing-periods/:subscriptionId/close', async (req, res, next) => {
   try {
