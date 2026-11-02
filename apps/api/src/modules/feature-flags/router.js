@@ -27,7 +27,7 @@ router.get('/:key', async (req, res, next) => {
   }
 });
 
-router.put('/:key', requireMinRole('ADMIN'), async (req, res, next) => {
+router.put('/:key', requireAdminAnywhere, async (req, res, next) => {
   try {
     const { key } = validators.flagKeySchema.parse(req.params);
     const data = validators.setFlagSchema.parse(req.body);
@@ -38,7 +38,7 @@ router.put('/:key', requireMinRole('ADMIN'), async (req, res, next) => {
   }
 });
 
-router.delete('/:key', requireMinRole('ADMIN'), async (req, res, next) => {
+router.delete('/:key', requireAdminAnywhere, async (req, res, next) => {
   try {
     const { key } = validators.flagKeySchema.parse(req.params);
     await service.deleteFlag(key);
