@@ -644,3 +644,15 @@ model SupportTicket {
   @@index([organizationId, status])
   @@index([organizationId, userId])
 }
+
+/// Persistent idempotency store for inbound webhooks.
+/// Replaces the in-memory Set that was lost on server restart (F-07).
+model ProcessedWebhookEvent {
+  id         String   @id @default(cuid())
+  provider   String
+  eventId    String
+  processedAt DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@index([processedAt])
+}

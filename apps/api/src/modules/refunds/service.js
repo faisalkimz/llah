@@ -5,6 +5,7 @@ import * as ledgerRepo from '../ledger/repository.js';
 import { randomUUID } from 'node:crypto';
 import { dispatchEvent } from '../webhooks-outbound/service.js';
 import { createNotification } from '../notifications/service.js';
+import { logEvent } from '../event-log/service.js';
 
 /**
  * createRefund
@@ -125,7 +126,8 @@ export async function createRefund(orgId, { paymentId, amountMinor, reason }) {
 
   Promise.allSettled([
     dispatchEvent(orgId, 'refund.created', randomUUID(), { id: refund.id, paymentId: refund.paymentId, amountMinor: String(refund.amountMinor), reason: refund.reason, status: refund.status }),
-    createNotification(orgId, { type: 'REFUND_ISSUED', title: 'Refund issued', message: `A refund of ${String(refund.amountMinor)} has been issued.`, metadata: { refundId: refund.id, paymentId: refund.paymentId } })
+    createNotification(orgId, { type: 'REFUND_ISSUED', title: 'Refund issued', message: `A refund of ${String(refund.amountMinor)} has been issued.`, metadata: { refundId: refund.id, paymentId: refund.paymentId } }),
+    logEvent(orgId, null, { action: 'refund.create', targetType: 'Refund', targetId: refund.id, metadata: { paymentId, amountMinor: String(refund.amountMinor), reason: reason ?? null } })
   ]).catch(() => {});
 
   return refund;

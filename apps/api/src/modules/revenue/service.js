@@ -1,5 +1,13 @@
 import prisma from '../../lib/prisma.js';
 
+/**
+ * Estimate monthly recurring revenue.
+ *
+ * Flat-price items: unitAmountMinor * quantity (exact).
+ * Metered-price items: use the most recent paid invoice line for that price
+ * as a single-month proxy (best available estimate when there is no fixed unit
+ * amount). Items with no invoice history are excluded from the estimate.
+ */
 export async function getMRR(orgId) {
   const subs = await prisma.subscription.findMany({
     where: { organizationId: orgId, status: 'ACTIVE' },
@@ -18,8 +26,27 @@ export async function getMRR(orgId) {
   for (const sub of subs) {
     for (const item of sub.plan.items) {
       if (item.price.unitAmountMinor != null) {
+        // Flat price — exact
         const qty = BigInt(item.quantity ?? 1);
         mrrMinor += BigInt(item.price.unitAmountMinor) * qty;
+      } else if (item.price.billingScheme === 'PER_UNIT' || item.price.billingScheme == null) {
+        // Metered price — estimate from most recent paid invoice line for this price
+        // (approximation: most recent PAID invoice covering this subscription's period)
+        const recentLine = await prisma.invoiceLine.findFirst({
+          where: {
+            invoice: {
+              organizationId: orgId,
+              customerId: sub.customerId,
+              status: 'PAID',
+            },
+            description: { contains: item.price.name ?? '' },
+          },
+          orderBy: { invoice: { paidAt: 'desc' } },
+          select: { amountMinor: true },
+        });
+        if (recentLine) {
+          mrrMinor += BigInt(recentLine.amountMinor);
+        }
       }
     }
   }

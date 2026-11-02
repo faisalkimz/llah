@@ -3,6 +3,7 @@ import * as repo from './repository.js';
 import { randomUUID } from 'node:crypto';
 import { dispatchEvent } from '../webhooks-outbound/service.js';
 import { createNotification } from '../notifications/service.js';
+import { logEvent } from '../event-log/service.js';
 
 export async function createSubscription(organizationId, subscriptionData) {
   const { planId, currentPeriodStart: _cps, currentPeriodEnd: _cpe, ...rest } = subscriptionData;
@@ -12,7 +13,7 @@ export async function createSubscription(organizationId, subscriptionData) {
   const intervalCount = plan?.intervalCount || 1;
   const periodStart = now;
   const periodEnd = advanceDate(now, interval, intervalCount);
-  return await repo.createSubscription({
+  const sub = await repo.createSubscription({
     ...rest,
     organizationId,
     planId,
@@ -20,6 +21,8 @@ export async function createSubscription(organizationId, subscriptionData) {
     currentPeriodStart: periodStart,
     currentPeriodEnd: periodEnd,
   });
+  logEvent(organizationId, null, { action: 'subscription.create', targetType: 'Subscription', targetId: sub.id, metadata: { planId, customerId: rest.customerId } }).catch(() => {});
+  return sub;
 }
 
 export async function listSubscriptions(organizationId, filters) {
@@ -66,7 +69,8 @@ export async function cancelSubscription(subscriptionId, organizationId, immedia
   }
   Promise.allSettled([
     dispatchEvent(organizationId, 'subscription.canceled', randomUUID(), { subscriptionId, organizationId, customerId: subscription.customerId, immediate }),
-    createNotification(organizationId, { type: 'SUBSCRIPTION_CANCELED', title: immediate ? 'Subscription canceled' : 'Subscription scheduled for cancellation', message: immediate ? 'Your subscription has been canceled.' : 'Your subscription will be canceled at the end of the current period.', metadata: { subscriptionId } })
+    createNotification(organizationId, { type: 'SUBSCRIPTION_CANCELED', title: immediate ? 'Subscription canceled' : 'Subscription scheduled for cancellation', message: immediate ? 'Your subscription has been canceled.' : 'Your subscription will be canceled at the end of the current period.', metadata: { subscriptionId } }),
+    logEvent(organizationId, null, { action: 'subscription.cancel', targetType: 'Subscription', targetId: subscriptionId, metadata: { immediate, customerId: subscription.customerId } })
   ]).catch(() => {});
   return updated;
 }

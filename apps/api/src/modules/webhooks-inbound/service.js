@@ -3,9 +3,44 @@ import { env } from '../../config/env.js';
 import { updatePayment, getPayment } from '../payments/service.js';
 import prisma from '../../lib/prisma.js';
 
-// TODO: replace with Redis in production — in-memory idempotency is lost on restart
-const processedStripeEventIds = new Set();
-const processedPayPalEventIds = new Set();
+/**
+ * Check whether an inbound webhook event has already been processed.
+ * Uses the ProcessedWebhookEvent table for persistence across restarts
+ * and multi-process deployments (replaces the in-memory Set — F-07).
+ * Falls back to false (allow processing) on DB errors so that a migration
+ * not yet applied doesn't break webhook ingestion.
+ *
+ * @returns {Promise<boolean>} true if already seen (duplicate)
+ */
+async function isEventProcessed(provider, eventId) {
+  try {
+    const existing = await prisma.processedWebhookEvent.findUnique({
+      where: { provider_eventId: { provider, eventId } },
+      select: { id: true },
+    });
+    return existing !== null;
+  } catch {
+    return false; // graceful fallback if table doesn't exist yet
+  }
+}
+
+/**
+ * Record an inbound webhook event as processed.
+ * Silently ignores errors (e.g., migration not yet applied, race-condition
+ * duplicate insert) — the worst case is a second delivery, which is
+ * acceptable and much better than crashing the webhook endpoint.
+ */
+async function markEventProcessed(provider, eventId) {
+  try {
+    await prisma.processedWebhookEvent.upsert({
+      where: { provider_eventId: { provider, eventId } },
+      create: { provider, eventId },
+      update: {}, // already exists — no-op
+    });
+  } catch {
+    // ignore
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Stripe
@@ -85,8 +120,8 @@ export async function handleStripeWebhook(rawBody, signatureHeader) {
 
   const eventId = event?.id;
 
-  // Idempotency check
-  if (eventId && processedStripeEventIds.has(eventId)) {
+  // Idempotency check — uses DB for persistence across restarts
+  if (eventId && await isEventProcessed('stripe', eventId)) {
     return { received: true, duplicate: true };
   }
 
@@ -109,7 +144,7 @@ export async function handleStripeWebhook(rawBody, signatureHeader) {
   }
   // Unknown event types: acknowledge but ignore
 
-  if (eventId) processedStripeEventIds.add(eventId);
+  if (eventId) await markEventProcessed('stripe', eventId);
 
   return { received: true };
 }
@@ -209,8 +244,8 @@ export async function handlePayPalWebhook(rawBody, headers) {
 
   const eventId = event?.id;
 
-  // Idempotency check
-  if (eventId && processedPayPalEventIds.has(eventId)) {
+  // Idempotency check — uses DB for persistence across restarts
+  if (eventId && await isEventProcessed('paypal', eventId)) {
     return { received: true, duplicate: true };
   }
 
@@ -231,7 +266,7 @@ export async function handlePayPalWebhook(rawBody, headers) {
   }
   // Unknown event types: acknowledge but ignore
 
-  if (eventId) processedPayPalEventIds.add(eventId);
+  if (eventId) await markEventProcessed('paypal', eventId);
 
   return { received: true };
 }

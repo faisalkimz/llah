@@ -4,6 +4,7 @@ import * as invoicesRepo from '../invoices/repository.js';
 import { randomUUID } from 'node:crypto';
 import { dispatchEvent } from '../webhooks-outbound/service.js';
 import { createNotification } from '../notifications/service.js';
+import { logEvent } from '../event-log/service.js';
 
 export async function createCreditGrant(organizationId, grantData) {
   const { amountMinor, expiresAt } = grantData;
@@ -147,7 +148,8 @@ export async function applyCreditToInvoice(organizationId, creditGrantId, invoic
 
   Promise.allSettled([
     dispatchEvent(organizationId, 'credit.applied', randomUUID(), { creditGrantId, invoiceId, amountAppliedMinor: String(amountToApplyMinor) }),
-    createNotification(organizationId, { type: 'CREDIT_APPLIED', title: 'Credit applied', message: 'Credit has been applied to your invoice.', metadata: { creditGrantId, invoiceId } })
+    createNotification(organizationId, { type: 'CREDIT_APPLIED', title: 'Credit applied', message: 'Credit has been applied to your invoice.', metadata: { creditGrantId, invoiceId } }),
+    logEvent(organizationId, null, { action: 'credit.apply', targetType: 'Invoice', targetId: invoiceId, metadata: { creditGrantId, amountMinor: String(amountToApplyMinor) } })
   ]).catch(() => {});
 
   return updatedInvoice;
