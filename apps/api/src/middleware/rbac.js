@@ -140,9 +140,10 @@ export function hasPermission(userRole, requiredRole) {
  * This is intentionally NOT derived from org membership roles -- being an OWNER or ADMIN
  * of your own organization must NOT grant access to other orgs' data.
  *
- * In development (NODE_ENV !== 'production') and when SUPER_ADMIN_EMAILS is not set,
- * the check is skipped so developers can test the admin panel without configuration.
- * In production, SUPER_ADMIN_EMAILS MUST be set or all requests return 403.
+ * When SUPER_ADMIN_EMAILS is set, the caller's email (verified from the DB) must be in
+ * that list. In production, SUPER_ADMIN_EMAILS MUST be set or all requests return 403.
+ * In development (NODE_ENV !== 'production') when SUPER_ADMIN_EMAILS is not set, the
+ * caller must instead be an OWNER of at least one organization to obtain admin access.
  */
 export async function requireAdminAnywhere(req, res, next) {
   try {
@@ -158,8 +159,19 @@ export async function requireAdminAnywhere(req, res, next) {
       });
     }
 
-    // Dev/test bypass: allow if SUPER_ADMIN_EMAILS is not set
-    if (superAdminEmails.size === 0) {
+    // Dev bypass: no SUPER_ADMIN_EMAILS set — require OWNER of any org (not every user)
+    if (superAdminEmails.size === 0 && env.NODE_ENV !== 'production') {
+      const ownerMembership = await prisma.membership.findFirst({
+        where: { userId: req.user.id, role: 'OWNER' },
+      });
+      if (!ownerMembership) {
+        return res.status(403).json({
+          error: {
+            code: 'SUPER_ADMIN_REQUIRED',
+            message: 'Admin access requires SUPER_ADMIN_EMAILS to be configured, or you must be an org Owner.',
+          },
+        });
+      }
       req.isSuperAdmin = true;
       return next();
     }

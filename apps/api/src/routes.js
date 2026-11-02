@@ -36,7 +36,6 @@ import observabilityRouter from './modules/observability/router.js';
 import * as observabilityService from './modules/observability/service.js';
 import featureFlagsRouter from './modules/feature-flags/router.js';
 import settingsRouter from './modules/settings/router.js';
-import mobileRouter from './modules/mobile/router.js';
 
 export const apiRouter=Router();
 apiRouter.use('/auth',authRouter);
@@ -82,4 +81,3 @@ apiRouter.get('/observability/health', async (req, res, next) => {
 apiRouter.use('/observability',requireAuth,observabilityRouter);
 apiRouter.use('/feature-flags',requireAuth,featureFlagsRouter);
 apiRouter.use('/settings',requireAuth,settingsRouter);
-apiRouter.use('/mobile',requireAuth,mobileRouter);

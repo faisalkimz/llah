@@ -4,7 +4,7 @@ import * as repo from './repository.js';
  * Generate the next invoice number for an org.
  * Format: INV-{first 6 chars of orgId}-{zero-padded 4-digit sequence}
  */
-function buildInvoiceNumber(orgId, lastNumber) {
+export function buildInvoiceNumber(orgId, lastNumber) {
   let nextSeq = 1;
   if (lastNumber) {
     const parts = lastNumber.split('-');

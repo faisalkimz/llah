@@ -1,12 +1,11 @@
 import { Router } from 'express';
-import { requireOrg } from '../../middleware/require-org.js';
 import { requireMinRole } from '../../middleware/rbac.js';
 import * as service from './service.js';
 import * as validators from './validators.js';
 
+// Feature flags are platform-wide. Any authenticated user can read.
+// Only admins can mutate.
 const router = Router();
-
-router.use(requireOrg);
 
 router.get('/', async (req, res, next) => {
   try {

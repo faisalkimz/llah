@@ -77,7 +77,8 @@ export async function calculateTax(orgId, { amountMinor, country, region }) {
     throw err;
   }
 
-  const taxAmountMinor = BigInt(Math.floor(Number(amountMinor) * Number(taxRate.rate) / 100));
+  const taxAmountMinor =
+    (BigInt(amountMinor) * BigInt(Math.round(Number(taxRate.rate) * 10000))) / BigInt(1000000);
 
   return {
     taxRateId: taxRate.id,
@@ -103,14 +104,25 @@ export async function applyTaxToInvoice(invoiceId, orgId, { country, region }) {
     throw err;
   }
 
-  const { taxRateId, taxAmountMinor } = await calculateTax(orgId, {
-    amountMinor: Number(invoice.subtotalMinor),
-    country,
-    region,
-  });
+  return await prisma.$transaction(async (tx) => {
+    // Re-fetch subtotal inside the transaction to avoid acting on a stale read
+    const fresh = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      select: { subtotalMinor: true },
+    });
+    if (!fresh) {
+      const err = new Error('Invoice not found');
+      err.status = 404;
+      throw err;
+    }
 
-  const result = await prisma.$transaction([
-    prisma.invoiceLine.create({
+    const { taxRateId, taxAmountMinor } = await calculateTax(orgId, {
+      amountMinor: fresh.subtotalMinor,
+      country,
+      region,
+    });
+
+    await tx.invoiceLine.create({
       data: {
         invoiceId,
         description: 'Tax',
@@ -119,15 +131,14 @@ export async function applyTaxToInvoice(invoiceId, orgId, { country, region }) {
         amountMinor: taxAmountMinor,
         metadata: { type: 'TAX', taxRateId },
       },
-    }),
-    prisma.invoice.update({
+    });
+
+    return tx.invoice.update({
       where: { id: invoiceId },
       data: {
         taxMinor: taxAmountMinor,
-        totalMinor: invoice.subtotalMinor + taxAmountMinor,
+        totalMinor: BigInt(fresh.subtotalMinor) + taxAmountMinor,
       },
-    }),
-  ]);
-
-  return result[1];
+    });
+  });
 }

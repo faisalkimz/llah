@@ -17,11 +17,10 @@ export async function createCustomer(organizationId, data) {
       organizationId
     );
     if (existingByExternalId) {
-      throw {
-        statusCode: 409,
-        code: 'DUPLICATE_EXTERNAL_ID',
-        message: `Customer with external ID "${data.externalId}" already exists`,
-      };
+      throw Object.assign(
+        new Error(`Customer with external ID "${data.externalId}" already exists`),
+        { status: 409, code: 'DUPLICATE_EXTERNAL_ID' }
+      );
     }
   }
 
@@ -48,11 +47,10 @@ export async function getCustomer(customerId, organizationId) {
   const customer = await repository.findById(customerId, organizationId);
   
   if (!customer) {
-    throw {
-      statusCode: 404,
+    throw Object.assign(new Error('Customer not found'), {
+      status: 404,
       code: 'CUSTOMER_NOT_FOUND',
-      message: 'Customer not found',
-    };
+    });
   }
 
   return customer;
@@ -65,11 +63,10 @@ export async function getCustomerWithStats(customerId, organizationId) {
   const customer = await repository.findByIdWithStats(customerId, organizationId);
   
   if (!customer) {
-    throw {
-      statusCode: 404,
+    throw Object.assign(new Error('Customer not found'), {
+      status: 404,
       code: 'CUSTOMER_NOT_FOUND',
-      message: 'Customer not found',
-    };
+    });
   }
 
   return customer;
@@ -90,11 +87,10 @@ export async function updateCustomer(customerId, organizationId, data) {
   // Check if customer exists
   const existing = await repository.findById(customerId, organizationId);
   if (!existing) {
-    throw {
-      statusCode: 404,
+    throw Object.assign(new Error('Customer not found'), {
+      status: 404,
       code: 'CUSTOMER_NOT_FOUND',
-      message: 'Customer not found',
-    };
+    });
   }
 
   // Check for duplicate external ID if being updated
@@ -105,11 +101,10 @@ export async function updateCustomer(customerId, organizationId, data) {
       customerId
     );
     if (duplicate) {
-      throw {
-        statusCode: 409,
-        code: 'DUPLICATE_EXTERNAL_ID',
-        message: `Customer with external ID "${data.externalId}" already exists`,
-      };
+      throw Object.assign(
+        new Error(`Customer with external ID "${data.externalId}" already exists`),
+        { status: 409, code: 'DUPLICATE_EXTERNAL_ID' }
+      );
     }
   }
 
@@ -124,21 +119,19 @@ export async function deleteCustomer(customerId, organizationId) {
   // Check if customer exists
   const existing = await repository.findById(customerId, organizationId);
   if (!existing) {
-    throw {
-      statusCode: 404,
+    throw Object.assign(new Error('Customer not found'), {
+      status: 404,
       code: 'CUSTOMER_NOT_FOUND',
-      message: 'Customer not found',
-    };
+    });
   }
 
   // Check if customer has active subscriptions
   const customerWithStats = await repository.findByIdWithStats(customerId, organizationId);
   if (customerWithStats._count.subscriptions > 0) {
-    throw {
-      statusCode: 409,
-      code: 'CUSTOMER_HAS_SUBSCRIPTIONS',
-      message: 'Cannot delete customer with active subscriptions',
-    };
+    throw Object.assign(
+      new Error('Cannot delete customer with active subscriptions'),
+      { status: 409, code: 'CUSTOMER_HAS_SUBSCRIPTIONS' }
+    );
   }
 
   return repository.deleteById(customerId, organizationId);

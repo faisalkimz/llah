@@ -65,6 +65,8 @@ export async function updateTicket(orgId, id, data) {
       ...(data.status !== undefined ? { status: data.status } : {}),
       ...(data.priority !== undefined ? { priority: data.priority } : {}),
       ...(data.assignedToId !== undefined ? { assignedToId: data.assignedToId } : {}),
+      ...(data.status === 'RESOLVED' && { resolvedAt: new Date() }),
+      ...(data.status === 'CLOSED' && { resolvedAt: current.resolvedAt ?? new Date() }),
     },
   });
 }
