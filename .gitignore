@@ -8,4 +8,4 @@ coverage/
 *.log
 .DS_Store
 .neon
-.agents/tasks/
+.agents/
