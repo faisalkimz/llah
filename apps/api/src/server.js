@@ -8,7 +8,7 @@ import * as subscriptionsService from './modules/subscriptions/service.js';
 const server = createServer(app);
 initWebSocket(server);
 
-server.listen(env.PORT, () => console.log(`Llah API listening on http://localhost:${env.PORT}`));
+server.listen(env.PORT, '0.0.0.0', () => console.log(`Llah API listening on http://0.0.0.0:${env.PORT}`));
 
 // Background scheduler: process subscription expirations + renewals every 5 minutes
 setInterval(async () => {

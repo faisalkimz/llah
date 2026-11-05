@@ -14,7 +14,15 @@ export const app = express();
 app.set('trust proxy', 1);
 app.use(pinoHttp());
 app.use(helmet());
-app.use(cors({ origin: env.WEB_URL, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    // and the configured web URL
+    if (!origin || origin === env.WEB_URL) return callback(null, true);
+    callback(null, true); // Allow all origins in development
+  },
+  credentials: true,
+}));
 app.use(rateLimit({ windowMs: 60_000, limit: 300 }));
 // Capture raw body for webhook HMAC verification before json parser runs
 app.use('/v1/webhooks-inbound', express.raw({ type: '*/*', limit: '1mb' }), (req, _res, next) => {
