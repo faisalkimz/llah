@@ -3,13 +3,13 @@ import { View, TouchableOpacity } from 'react-native';
 import { BarChart2, Users, Code2, Settings2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/app/HomeScreen';
-import CustomersScreen from '../screens/app/CustomersScreen';
+import CustomersNavigator from './CustomersNavigator';
 import DeveloperScreen from '../screens/app/DeveloperScreen';
 import SettingsScreen from '../screens/app/SettingsScreen';
 
 const TABS = [
   { name: 'Home', Icon: BarChart2, Screen: HomeScreen },
-  { name: 'Customers', Icon: Users, Screen: CustomersScreen },
+  { name: 'Customers', Icon: Users, Screen: CustomersNavigator },
   { name: 'Developer', Icon: Code2, Screen: DeveloperScreen },
   { name: 'Settings', Icon: Settings2, Screen: SettingsScreen },
 ];
