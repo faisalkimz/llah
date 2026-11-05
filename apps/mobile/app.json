@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Llah",
+    "slug": "llah",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f8fafc"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.llah.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f8fafc"
+      },
+      "package": "com.llah.mobile"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}
