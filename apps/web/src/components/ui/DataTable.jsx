@@ -70,7 +70,7 @@ export default function DataTable({
                 <tr key={`skel-${i}`}>
                   {columns.map(col => (
                     <td key={col.key}>
-                      <div className="skeleton-text" style={{ width: `${40 + Math.random() * 40}%` }} />
+                      <div className="skeleton-text" style={{ width: col.align === 'right' ? '48%' : '68%' }} />
                     </td>
                   ))}
                 </tr>
@@ -117,9 +117,9 @@ export function TablePagination({ offset, limit, total, onPageChange }) {
   const end = Math.min(offset + limit, total);
 
   return (
-    <div className="card-footer flex items-center justify-between">
-      <span className="text-xs text-muted">
-        {total > 0 ? `${start} to ${end} of ${total}` : 'No results'}
+    <div className="px-4 py-3 border-t border-line flex items-center justify-between">
+      <span className="text-[13px] text-muted">
+        {total > 0 ? `${start}–${end} of ${total}` : 'No results'}
       </span>
       <div className="flex items-center gap-1">
         <button

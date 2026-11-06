@@ -3,10 +3,9 @@ import { Gauge } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
-import StatCard from '../components/ui/StatCard.jsx';
+import MetricStrip from '../components/ui/MetricStrip.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { SkeletonCard } from '../components/ui/Skeleton.jsx';
 
 function truncate(str, len = 12) {
   if (!str) return '—';
@@ -58,7 +57,7 @@ export default function Usage() {
     return (
       <>
         <PageHeader title="Usage" />
-        <div className="grid grid-cols-2 gap-4 mb-6">{[0,1].map(i=><SkeletonCard key={i}/>)}</div>
+        <div className="grid grid-cols-2 gap-4 mb-6">{[0,1].map(i=><div key={i} className="card p-5"><div className="skeleton h-4 w-24 mb-3" /><div className="skeleton h-8 w-20" /></div>)}</div>
       </>
     );
   }
@@ -111,25 +110,28 @@ export default function Usage() {
 
   return (
     <>
-      <PageHeader title="Usage" description="Track usage events and aggregations" />
+      <PageHeader title="Usage" description="Recent usage events and aggregated meter totals." />
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <StatCard label="Total events" value={events.length} sub="Last 20 fetched" />
-        <StatCard label="Unique meters" value={uniqueMeters} sub="From aggregates" />
-      </div>
+      <MetricStrip
+        className="mb-6"
+        items={[
+          { label: 'Events loaded', value: events.length, sub: 'Latest page' },
+          { label: 'Meters in aggregates', value: uniqueMeters },
+        ]}
+      />
 
       {/* Chart */}
       {chartData.length > 0 && (
         <div className="card mb-6">
-          <div className="card-header"><h2 className="text-sm font-semibold text-ink">Usage over time</h2></div>
+          <div className="card-header"><h2 className="text-[13px] font-medium text-ink">Quantity</h2></div>
           <div className="p-4">
             <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" />
+              <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" vertical={false} />
                 <XAxis dataKey="time" tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} width={40} />
                 <Tooltip contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-line)', borderRadius: 6, fontSize: 12 }} />
-                <Line type="monotone" dataKey="quantity" stroke="var(--color-accent)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="quantity" stroke="var(--color-chart)" strokeWidth={1.75} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

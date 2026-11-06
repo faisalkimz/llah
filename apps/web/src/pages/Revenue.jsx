@@ -1,22 +1,28 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { api } from '../lib/api';
+import { formatMoney } from '../lib/format.js';
 import PageHeader from '../components/ui/PageHeader.jsx';
-import StatCard from '../components/ui/StatCard.jsx';
+import MetricStrip from '../components/ui/MetricStrip.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { SkeletonCard } from '../components/ui/Skeleton.jsx';
 import { DollarSign } from 'lucide-react';
-
-function fmt(minor) {
-  const n = typeof minor === 'bigint' ? Number(minor) : Number(minor || 0);
-  return (n / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-}
 
 function buildDateRange() {
   const to = new Date();
   const from = new Date();
   from.setMonth(from.getMonth() - 6);
   return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-line bg-surface px-3 py-2 shadow-sm text-[12px]">
+      <div className="text-muted mb-0.5">{label}</div>
+      <div className="font-medium text-ink tabular-nums">{formatMoney(payload[0].value)}</div>
+    </div>
+  );
 }
 
 export default function Revenue() {
@@ -66,7 +72,7 @@ export default function Revenue() {
   if (!organizationId) {
     return (
       <>
-        <PageHeader title="Revenue analytics" />
+        <PageHeader title="Revenue" description="Recurring revenue and billed volume." />
         <EmptyState icon={DollarSign} title="No organization selected" description="Select an organization to view revenue analytics." />
       </>
     );
@@ -75,7 +81,7 @@ export default function Revenue() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Revenue analytics" />
+        <PageHeader title="Revenue" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">{[0,1,2,3].map(i=><SkeletonCard key={i}/>)}</div>
       </>
     );
@@ -84,7 +90,7 @@ export default function Revenue() {
   if (error) {
     return (
       <>
-        <PageHeader title="Revenue analytics" />
+        <PageHeader title="Revenue" />
         <div className="card p-8 text-center">
           <div className="text-danger mb-2">{error}</div>
           <button onClick={loadAll} className="btn-secondary">Retry</button>
@@ -93,46 +99,46 @@ export default function Revenue() {
     );
   }
 
+  const churnLabel = churn != null
+    ? (typeof churn.churnRate === 'number' ? `${churn.churnRate.toFixed(2)}%` : String(churn.churnRate ?? '—'))
+    : '—';
+
   return (
     <>
-      <PageHeader title="Revenue analytics" description="Monitor your revenue performance" />
+      <PageHeader title="Revenue" description="MRR, ARR, billed volume, and churn for the last 6 months." />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="MRR" value={fmt(stats?.mrr)} sub="Monthly recurring revenue" />
-        <StatCard label="ARR" value={fmt(stats?.arr)} sub="Annual recurring revenue" />
-        <StatCard label="Total revenue" value={fmt(stats?.totalRevenue)} sub="All time" />
-        <StatCard
-          label="Churn rate"
-          value={churn != null
-            ? (typeof churn.churnRate === 'number' ? churn.churnRate.toFixed(2) + '%' : String(churn.churnRate ?? '—'))
-            : '—'}
-          sub="Last 30 days"
-        />
-      </div>
+      <MetricStrip
+        className="mb-6"
+        items={[
+          { label: 'MRR', value: formatMoney(stats?.mrr), sub: 'Monthly recurring' },
+          { label: 'ARR', value: formatMoney(stats?.arr), sub: 'Annualized' },
+          { label: 'Total revenue', value: formatMoney(stats?.totalRevenue), sub: 'All time' },
+          { label: 'Churn rate', value: churnLabel, sub: 'Last 30 days' },
+        ]}
+      />
 
       <div className="card">
-        <div className="card-header">
-          <h2 className="text-sm font-semibold text-ink">Revenue — last 6 months</h2>
+        <div className="card-header flex items-center justify-between">
+          <h2 className="text-[13px] font-medium text-ink">Billed volume</h2>
+          <span className="text-[13px] text-muted">Last 6 months</span>
         </div>
         <div className="p-4">
           {periods.length === 0 ? (
-            <EmptyState icon={DollarSign} title="No revenue data" description="Revenue data will appear here once you start billing customers." />
+            <EmptyState icon={DollarSign} title="No revenue data" description="Revenue appears here once customers are billed." />
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={periods} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" />
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={periods} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--color-muted)' }} axisLine={false} tickLine={false} />
                 <YAxis
                   tick={{ fontSize: 11, fill: 'var(--color-muted)' }}
                   axisLine={false}
                   tickLine={false}
+                  width={56}
                   tickFormatter={v => `$${(v / 100).toLocaleString()}`}
                 />
-                <Tooltip
-                  formatter={v => [fmt(v), 'Revenue']}
-                  contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-line)', borderRadius: 6, fontSize: 12 }}
-                />
-                <Bar dataKey="revenueMinor" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-canvas-subtle)' }} />
+                <Bar dataKey="revenueMinor" fill="var(--color-chart)" radius={[3, 3, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           )}

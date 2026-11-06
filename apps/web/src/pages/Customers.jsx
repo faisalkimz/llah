@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { api } from '../lib/api';
+import { formatDate } from '../lib/format.js';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -80,7 +81,7 @@ export default function Customers() {
     {
       key: 'createdAt',
       header: 'Created',
-      render: v => new Date(v).toLocaleDateString(),
+      render: v => formatDate(v),
       cellClassName: 'cell-muted',
     },
   ];
@@ -89,7 +90,7 @@ export default function Customers() {
     <>
       <PageHeader
         title="Customers"
-        description="Manage your customers and their information"
+        description="Accounts you bill, with contact details and identifiers."
         action={
           <div className="flex gap-2">
             <button onClick={handleExportCsv} className="btn-secondary" disabled={customers.length === 0}>
@@ -100,11 +101,11 @@ export default function Customers() {
         }
       />
 
-      <div className="card">
-        <div className="card-header">
+      <div className="card overflow-hidden">
+        <div className="px-4 py-3 border-b border-line">
           <input
-            type="text"
-            placeholder="Search by name or email..."
+            type="search"
+            placeholder="Search by name or email"
             value={search}
             onChange={e => {
               setSearch(e.target.value);

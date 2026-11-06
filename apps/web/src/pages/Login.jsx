@@ -58,8 +58,8 @@ export default function Login() {
     >
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-[24px] font-extrabold text-ink tracking-tight mb-2" id="login-heading">
-          Sign in to your account
+        <h2 className="text-[22px] font-semibold text-ink tracking-tight mb-2" id="login-heading">
+          Sign in
         </h2>
         <p className="text-[14px] text-muted">
           Enter your credentials to access your dashboard
@@ -70,12 +70,12 @@ export default function Login() {
       <form onSubmit={submit} className="space-y-5" aria-labelledby="login-heading">
         {/* Email */}
         <div>
-          <label htmlFor="login-email" className="block text-[11px] font-semibold text-ink mb-2 uppercase tracking-wider">
-            Email address
+          <label htmlFor="login-email" className="label">
+            Email
           </label>
           <input 
             id="login-email"
-            className="w-full h-11 rounded-xl border border-line bg-white px-4 text-[14px] text-ink placeholder-muted/60 outline-none transition-all focus:border-ink focus:ring-2 focus:ring-ink/10" 
+            className="input" 
             type="email" 
             placeholder="name@company.com"
             value={form.email} 
@@ -89,12 +89,12 @@ export default function Login() {
         {/* Password */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor="login-password" className="block text-[11px] font-semibold text-ink uppercase tracking-wider">
+            <label htmlFor="login-password" className="label mb-0">
               Password
             </label>
             <Link 
               to="/forgot-password"
-              className="text-[11px] font-semibold text-sky-600 hover:text-sky-700 transition-colors"
+              className="text-[13px] text-accent hover:underline"
             >
               Forgot password?
             </Link>
@@ -121,7 +121,7 @@ export default function Login() {
         {/* Submit */}
         <button 
           type="submit"
-          className="w-full h-12 rounded-xl bg-ink px-4 text-[14px] font-bold text-white transition-all hover:bg-ink/90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md" 
+          className="btn-primary w-full" 
           disabled={loading}
           id="login-submit"
         >

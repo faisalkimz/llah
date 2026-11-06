@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wrench, Link as LinkIcon } from 'lucide-react';
 import { api } from '../lib/api';
 import PageHeader from '../components/ui/PageHeader.jsx';
-import StatCard from '../components/ui/StatCard.jsx';
+import MetricStrip from '../components/ui/MetricStrip.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import CodeBlock from '../components/ui/CodeBlock.jsx';
@@ -88,18 +88,24 @@ export default function Developer() {
 
       {!loading && !unavailable && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <StatCard label="API key count" value={overview?.apiKeyCount ?? overview?.api_key_count ?? '—'} />
-            <StatCard label="Total usage events" value={overview?.totalUsageEvents ?? overview?.total_usage_events ?? '—'} />
-            <StatCard label="Recent events (30d)" value={overview?.recentEvents ?? overview?.recent_events ?? '—'} sub="Last 30 days" />
-          </div>
+          <MetricStrip
+            className="mb-4"
+            items={[
+              { label: 'API keys', value: overview?.apiKeyCount ?? overview?.api_key_count ?? '—' },
+              { label: 'Usage events', value: overview?.totalUsageEvents ?? overview?.total_usage_events ?? '—' },
+              { label: 'Events, 30 days', value: overview?.recentEvents ?? overview?.recent_events ?? '—' },
+            ]}
+          />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <StatCard label="Total deliveries" value={webhookStats?.total ?? webhookStats?.totalDeliveries ?? '—'} />
-            <StatCard label="Succeeded" value={webhookStats?.succeeded ?? webhookStats?.success ?? '—'} />
-            <StatCard label="Failed" value={webhookStats?.failed ?? webhookStats?.failure ?? '—'} />
-            <StatCard label="Pending" value={webhookStats?.pending ?? '—'} />
-          </div>
+          <MetricStrip
+            className="mb-6"
+            items={[
+              { label: 'Webhook deliveries', value: webhookStats?.total ?? webhookStats?.totalDeliveries ?? '—' },
+              { label: 'Succeeded', value: webhookStats?.succeeded ?? webhookStats?.success ?? '—' },
+              { label: 'Failed', value: webhookStats?.failed ?? webhookStats?.failure ?? '—' },
+              { label: 'Pending', value: webhookStats?.pending ?? '—' },
+            ]}
+          />
 
           <div className="card mb-6">
             <div className="card-header">

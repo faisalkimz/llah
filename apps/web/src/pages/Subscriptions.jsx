@@ -7,8 +7,15 @@ import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
+import Tabs from '../components/ui/Tabs.jsx';
 
-const STATUS_TABS = ['All', 'ACTIVE', 'CANCELED', 'PAST_DUE', 'PAUSED'];
+const STATUS_TABS = [
+  { value: 'All', label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'CANCELED', label: 'Canceled' },
+  { value: 'PAST_DUE', label: 'Past due' },
+  { value: 'PAUSED', label: 'Paused' },
+];
 
 export default function Subscriptions() {
   const toast = useToast();
@@ -119,22 +126,16 @@ export default function Subscriptions() {
 
   return (
     <>
-      <PageHeader title="Subscriptions" description="Manage customer subscriptions" />
+      <PageHeader title="Subscriptions" description="Active and historical subscriptions for this organization." />
 
-      {/* Status tabs */}
-      <div className="tab-list mb-4">
-        {STATUS_TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => { setStatusFilter(tab); setPagination(prev => ({ ...prev, offset: 0 })); }}
-            className={`tab ${statusFilter === tab ? 'tab-active' : ''}`}
-          >
-            {tab === 'All' ? 'All' : tab.replace('_', ' ')}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4"
+        tabs={STATUS_TABS}
+        active={statusFilter}
+        onChange={(value) => { setStatusFilter(value); setPagination(prev => ({ ...prev, offset: 0 })); }}
+      />
 
-      <div className="card">
+      <div className="card overflow-hidden">
         {error && !loading && (
           <div className="p-8 text-center">
             <div className="text-danger mb-2">{error}</div>

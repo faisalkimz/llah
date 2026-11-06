@@ -167,7 +167,7 @@ export default function ApiKeys() {
     <>
       <PageHeader
         title="API keys"
-        description="Manage API keys for programmatic access"
+        description="Keys for server-side access. Secrets are shown once, when created."
         action={<button className="btn-primary" onClick={() => setShowCreate(true)}>Generate API key</button>}
       />
 

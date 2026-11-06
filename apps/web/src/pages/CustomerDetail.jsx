@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast.jsx';
+import { formatDateTime } from '../lib/format.js';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
-import StatCard from '../components/ui/StatCard.jsx';
+import MetricStrip from '../components/ui/MetricStrip.jsx';
 import { SkeletonCard } from '../components/ui/Skeleton.jsx';
 
 export default function CustomerDetail() {
@@ -154,17 +155,20 @@ export default function CustomerDetail() {
       />
 
       {customer._count && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <StatCard label="Subscriptions" value={customer._count.subscriptions ?? 0} />
-          <StatCard label="Invoices" value={customer._count.invoices ?? 0} />
-          <StatCard label="Usage events" value={customer._count.usageEvents ?? 0} />
-        </div>
+        <MetricStrip
+          className="mb-6"
+          items={[
+            { label: 'Subscriptions', value: customer._count.subscriptions ?? 0 },
+            { label: 'Invoices', value: customer._count.invoices ?? 0 },
+            { label: 'Usage events', value: customer._count.usageEvents ?? 0 },
+          ]}
+        />
       )}
 
       <form onSubmit={handleSave} className="space-y-4">
         <div className="card">
           <div className="card-header flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Customer details</h2>
+            <h2 className="text-[13px] font-medium text-ink">Details</h2>
           </div>
           <div className="card-body grid grid-cols-1 md:grid-cols-2 gap-4">
             {fields.map(({ name, label, type = 'text', required }) => (
@@ -192,8 +196,8 @@ export default function CustomerDetail() {
         <div className="card">
           <div className="card-body">
             <div className="grid grid-cols-2 gap-4 text-sm text-muted">
-              <div>Created: <span className="text-ink ml-1">{new Date(customer.createdAt).toLocaleString()}</span></div>
-              <div>Updated: <span className="text-ink ml-1">{new Date(customer.updatedAt).toLocaleString()}</span></div>
+              <div>Created <span className="text-ink ml-1 tabular-nums">{formatDateTime(customer.createdAt)}</span></div>
+              <div>Updated <span className="text-ink ml-1 tabular-nums">{formatDateTime(customer.updatedAt)}</span></div>
             </div>
           </div>
         </div>

@@ -4,24 +4,30 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { api } from '../lib/api';
+import { formatMoney, formatId } from '../lib/format.js';
 import { useRealtimeFeed } from '../lib/ws.js';
 import PageHeader from '../components/ui/PageHeader.jsx';
-import StatCard from '../components/ui/StatCard.jsx';
+import MetricStrip from '../components/ui/MetricStrip.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton.jsx';
 import { Building2, CheckCircle2, AlertTriangle, Radio, Trash2 } from 'lucide-react';
-
-function fmt(minor) {
-  const n = typeof minor === 'bigint' ? Number(minor) : Number(minor || 0);
-  return (n / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-}
 
 function buildDateRange() {
   const to = new Date();
   const from = new Date();
   from.setMonth(from.getMonth() - 6);
   return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border border-line bg-surface px-3 py-2 shadow-sm text-[12px]">
+      <div className="text-muted mb-0.5">{label}</div>
+      <div className="font-medium text-ink tabular-nums">{formatMoney(payload[0].value)}</div>
+    </div>
+  );
 }
 
 function RevenueChart({ periods }) {
@@ -33,15 +39,15 @@ function RevenueChart({ periods }) {
     );
   }
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={periods} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+    <ResponsiveContainer width="100%" height={240}>
+      <AreaChart data={periods} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="var(--color-accent)" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+            <stop offset="0%"  stopColor="var(--color-chart)" stopOpacity={0.16} />
+            <stop offset="100%" stopColor="var(--color-chart)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" vertical={false} />
         <XAxis
           dataKey="label"
           tick={{ fontSize: 11, fill: 'var(--color-muted)' }}
@@ -52,22 +58,15 @@ function RevenueChart({ periods }) {
           tick={{ fontSize: 11, fill: 'var(--color-muted)' }}
           axisLine={false}
           tickLine={false}
+          width={56}
           tickFormatter={v => `$${(v / 100).toLocaleString()}`}
         />
-        <Tooltip
-          formatter={(v) => [fmt(v), 'Revenue']}
-          contentStyle={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-line)',
-            borderRadius: 6,
-            fontSize: 12,
-          }}
-        />
+        <Tooltip content={<ChartTooltip />} />
         <Area
           type="monotone"
           dataKey="revenueMinor"
-          stroke="var(--color-accent)"
-          strokeWidth={2}
+          stroke="var(--color-chart)"
+          strokeWidth={1.75}
           fill="url(#revenueGrad)"
         />
       </AreaChart>
@@ -160,7 +159,7 @@ export default function Dashboard() {
   if (!organizationId) {
     return (
       <>
-        <PageHeader title="Dashboard" />
+        <PageHeader title="Home" description="Overview of billing activity for this workspace." />
         <EmptyState
           icon={Building2}
           title="No organization selected"
@@ -174,10 +173,8 @@ export default function Dashboard() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Dashboard" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[0,1,2,3].map(i => <SkeletonCard key={i} />)}
-        </div>
+        <PageHeader title="Home" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px mb-6">{[0,1,2,3].map(i => <SkeletonCard key={i} />)}</div>
         <SkeletonTable rows={5} columns={4} />
       </>
     );
@@ -186,9 +183,9 @@ export default function Dashboard() {
   if (error) {
     return (
       <>
-        <PageHeader title="Dashboard" />
+        <PageHeader title="Home" />
         <div className="card p-8 text-center">
-          <div className="text-danger mb-2">Failed to load dashboard</div>
+          <div className="text-danger mb-2">{error}</div>
           <button onClick={loadDashboard} className="btn-secondary">Retry</button>
         </div>
       </>
@@ -200,55 +197,41 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description="Overview of your billing platform"
-        action={<Link to="/revenue" className="btn-secondary">View reports</Link>}
+        title="Home"
+        description="Last 6 months of billed volume, invoices, and customers."
+        action={<Link to="/revenue" className="btn-secondary">View revenue</Link>}
       />
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="MRR"
-          value={fmt(stats?.mrr)}
-          sub="Monthly recurring revenue"
-        />
-        <StatCard
-          label="ARR"
-          value={fmt(stats?.arr)}
-          sub="Annual recurring revenue"
-        />
-        <StatCard
-          label="Open invoices"
-          value={openInvoicesCount}
-        />
-        <StatCard
-          label="Failed payments"
-          value={failedPaymentsCount}
-        />
-      </div>
+      <MetricStrip
+        className="mb-6"
+        items={[
+          { label: 'MRR', value: formatMoney(stats?.mrr), sub: 'Monthly recurring revenue' },
+          { label: 'ARR', value: formatMoney(stats?.arr), sub: 'Annual recurring revenue' },
+          { label: 'Open invoices', value: openInvoicesCount },
+          { label: 'Failed payments', value: failedPaymentsCount },
+        ]}
+      />
 
-      {/* Revenue chart */}
       <div className="card mb-6">
-        <div className="card-header">
-          <h2 className="text-sm font-semibold text-ink">Revenue — last 6 months</h2>
+        <div className="card-header flex items-center justify-between">
+          <h2 className="text-[13px] font-medium text-ink">Revenue</h2>
+          <span className="text-[13px] text-muted">Last 6 months</span>
         </div>
-        <div className="p-4">
+        <div className="px-2 pb-2 pt-1">
           <RevenueChart periods={periods} />
         </div>
       </div>
 
-      {/* Needs attention + recent rows */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Needs attention */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="card">
           <div className="card-header">
-            <h2 className="text-sm font-semibold text-ink">Needs attention</h2>
+            <h2 className="text-[13px] font-medium text-ink">Needs attention</h2>
           </div>
           <div className="card-body space-y-3">
             {!needsAttention ? (
               <div className="flex items-center gap-2 text-success text-sm">
                 <CheckCircle2 className="h-4 w-4" />
-                Everything looks good
+                Nothing requires action
               </div>
             ) : (
               <>
@@ -258,7 +241,7 @@ export default function Dashboard() {
                       <AlertTriangle className="h-4 w-4" />
                       {openInvoicesCount} open invoice{openInvoicesCount !== 1 ? 's' : ''}
                     </div>
-                    <Link to="/invoices" className="text-xs text-accent hover:underline">View</Link>
+                    <Link to="/invoices" className="text-[13px] text-accent hover:underline">View</Link>
                   </div>
                 )}
                 {failedPaymentsCount > 0 && (
@@ -267,7 +250,7 @@ export default function Dashboard() {
                       <AlertTriangle className="h-4 w-4" />
                       {failedPaymentsCount} failed payment{failedPaymentsCount !== 1 ? 's' : ''}
                     </div>
-                    <Link to="/payments" className="text-xs text-accent hover:underline">View</Link>
+                    <Link to="/payments" className="text-[13px] text-accent hover:underline">View</Link>
                   </div>
                 )}
               </>
@@ -275,10 +258,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent invoices */}
-        <div className="card lg:col-span-1">
+        <div className="card overflow-hidden">
           <div className="card-header flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink">Recent invoices</h2>
+            <h2 className="text-[13px] font-medium text-ink">Recent invoices</h2>
+            <Link to="/invoices" className="text-[13px] text-accent hover:underline">View all</Link>
           </div>
           <div className="table-container">
             <table className="table">
@@ -300,23 +283,20 @@ export default function Dashboard() {
                     className="cursor-pointer"
                     onClick={() => nav('/invoices')}
                   >
-                    <td className="cell-mono">{inv.number || inv.id?.slice(0, 8)}</td>
+                    <td className="cell-mono">{inv.number || formatId(inv.id, 8)}</td>
                     <td><StatusBadge status={inv.status} /></td>
-                    <td className="text-right tabular-nums">{fmt(inv.totalAmountMinor ?? inv.totalMinor)}</td>
+                    <td className="text-right tabular-nums">{formatMoney(inv.totalAmountMinor ?? inv.totalMinor)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="card-footer">
-            <Link to="/invoices" className="text-xs text-accent hover:underline">View all invoices</Link>
-          </div>
         </div>
 
-        {/* Recent customers */}
-        <div className="card lg:col-span-1">
-          <div className="card-header">
-            <h2 className="text-sm font-semibold text-ink">Recent customers</h2>
+        <div className="card overflow-hidden">
+          <div className="card-header flex items-center justify-between">
+            <h2 className="text-[13px] font-medium text-ink">Recent customers</h2>
+            <Link to="/customers" className="text-[13px] text-accent hover:underline">View all</Link>
           </div>
           <div className="table-container">
             <table className="table">
@@ -344,13 +324,9 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <div className="card-footer">
-            <Link to="/customers" className="text-xs text-accent hover:underline">View all customers</Link>
-          </div>
         </div>
       </div>
 
-      {/* Real-time Usage Feed */}
       <RealtimeFeed organizationId={organizationId} />
     </>
   );
@@ -360,18 +336,18 @@ function RealtimeFeed({ organizationId }) {
   const { events, connected, clearEvents } = useRealtimeFeed({ orgId: organizationId });
 
   return (
-    <div className="card mt-6">
+    <div className="card">
       <div className="card-header flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="h-4 w-4 text-muted" strokeWidth={1.5} />
-          <h3 className="font-semibold text-ink">Real-time usage feed</h3>
+          <h3 className="text-[13px] font-medium text-ink">Usage feed</h3>
           <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
             connected ? 'text-success' : 'text-muted'
           }`}>
-            <span className={`h-2 w-2 rounded-full ${
-              connected ? 'bg-success animate-pulse' : 'bg-muted'
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              connected ? 'bg-success' : 'bg-muted'
             }`} />
-            {connected ? 'Live' : 'Connecting...'}
+            {connected ? 'Live' : 'Connecting'}
           </span>
         </div>
         {events.length > 0 && (
@@ -388,24 +364,24 @@ function RealtimeFeed({ organizationId }) {
         {events.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted">
             {connected
-              ? 'Waiting for usage events... Send events via the API to see them appear here in real time.'
-              : 'Connecting to real-time feed...'}
+              ? 'Waiting for usage events. Events sent through the API appear here.'
+              : 'Connecting to the usage feed…'}
           </div>
         ) : (
           <div className="divide-y divide-line">
             {events.map((evt, idx) => (
-              <div key={evt.data?.id || idx} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-canvas-subtle">
-                <span className="h-2 w-2 rounded-full bg-accent flex-shrink-0" />
+              <div key={evt.data?.id || idx} className="flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-canvas-subtle">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="font-medium text-ink">{evt.type}</span>
                   {evt.data?.customerId && (
-                    <span className="text-muted ml-2">customer: <span className="font-mono text-xs">{evt.data.customerId.slice(0, 12)}…</span></span>
+                    <span className="text-muted ml-2">customer <span className="font-mono text-xs">{formatId(evt.data.customerId)}</span></span>
                   )}
                   {evt.data?.meterId && (
-                    <span className="text-muted ml-2">meter: <span className="font-mono text-xs">{evt.data.meterId}</span></span>
+                    <span className="text-muted ml-2">meter <span className="font-mono text-xs">{evt.data.meterId}</span></span>
                   )}
                   {evt.data?.quantity != null && (
-                    <span className="text-muted ml-2">qty: <span className="font-semibold text-ink">{evt.data.quantity}</span></span>
+                    <span className="text-muted ml-2">qty <span className="font-medium text-ink tabular-nums">{evt.data.quantity}</span></span>
                   )}
                 </div>
                 <span className="text-xs text-muted tabular-nums flex-shrink-0">
