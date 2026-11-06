@@ -69,6 +69,12 @@ export default function InvoiceDetailScreen({ navigation, route }) {
       queryClient.invalidateQueries({ queryKey: ['invoices', orgId] });
       queryClient.invalidateQueries({ queryKey: ['invoice', orgId, id] });
     },
+    onError: (error) => {
+      Alert.alert(
+        'Could not finalize invoice',
+        error?.message ?? 'Something went wrong. Please try again.',
+      );
+    },
   });
 
   const voidMutation = useMutation({
@@ -79,6 +85,12 @@ export default function InvoiceDetailScreen({ navigation, route }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices', orgId] });
       queryClient.invalidateQueries({ queryKey: ['invoice', orgId, id] });
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Could not void invoice',
+        error?.message ?? 'Something went wrong. Please try again.',
+      );
     },
   });
 
