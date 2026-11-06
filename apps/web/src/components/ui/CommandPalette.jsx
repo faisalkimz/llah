@@ -46,7 +46,6 @@ export default function CommandPalette() {
   const listRef = useRef(null);
   const navigate = useNavigate();
 
-  // Keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -54,8 +53,15 @@ export default function CommandPalette() {
         setOpen(v => !v);
       }
     }
+    function handleOpen() {
+      setOpen(true);
+    }
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('llah:command-palette', handleOpen);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('llah:command-palette', handleOpen);
+    };
   }, []);
 
   // Focus input when opening

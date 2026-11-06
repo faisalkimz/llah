@@ -11,6 +11,7 @@ export default {
         'canvas-overlay':   'var(--color-canvas-overlay)',
         surface:            'var(--color-surface)',
         'surface-raised':   'var(--color-surface-raised)',
+        sidebar:            'var(--color-sidebar)',
         ink:                'var(--color-ink)',
         'ink-secondary':    'var(--color-ink-secondary)',
         muted:              'var(--color-muted)',
@@ -40,7 +41,7 @@ export default {
       },
 
       fontSize: {
-        'page-title': ['1.5rem',   { lineHeight: '2rem',   fontWeight: '600', letterSpacing: '-0.025em' }],
+        'page-title': ['1.375rem', { lineHeight: '1.75rem', fontWeight: '600', letterSpacing: '-0.02em' }],
         'section':    ['1.125rem', { lineHeight: '1.75rem', fontWeight: '600', letterSpacing: '-0.015em' }],
         'body':       ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }],
         'caption':    ['0.75rem',  { lineHeight: '1rem',    fontWeight: '400' }],

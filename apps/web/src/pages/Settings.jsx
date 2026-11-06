@@ -129,7 +129,7 @@ export default function Settings() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Configure platform-wide settings" />
+      <PageHeader title="Settings" description="Billing defaults and workspace configuration." />
 
       {loading && <SkeletonTable rows={4} columns={2} className="mb-6" />}
 

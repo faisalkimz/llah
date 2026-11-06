@@ -3,12 +3,19 @@ import { Receipt, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import Tabs from '../components/ui/Tabs.jsx';
 import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal.jsx';
 
-const STATUS_TABS = ['All', 'DRAFT', 'OPEN', 'PAID', 'VOID'];
+const STATUS_TABS = [
+  { value: 'All', label: 'All' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'OPEN', label: 'Open' },
+  { value: 'PAID', label: 'Paid' },
+  { value: 'VOID', label: 'Void' },
+];
 
 function fmt(minor) {
   const n = typeof minor === 'bigint' ? Number(minor) : Number(minor || 0);
@@ -257,21 +264,16 @@ export default function Invoices() {
 
   return (
     <>
-      <PageHeader title="Invoices" description="View and manage customer invoices" />
+      <PageHeader title="Invoices" description="Draft, open, paid, and void invoices for this organization." />
 
-      <div className="tab-list mb-4">
-        {STATUS_TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => { setStatusFilter(tab); setPagination(prev => ({ ...prev, offset: 0 })); }}
-            className={`tab ${statusFilter === tab ? 'tab-active' : ''}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4"
+        tabs={STATUS_TABS}
+        active={statusFilter}
+        onChange={(value) => { setStatusFilter(value); setPagination(prev => ({ ...prev, offset: 0 })); }}
+      />
 
-      <div className="card">
+      <div className="card overflow-hidden">
         {error && !loading && (
           <div className="p-8 text-center">
             <div className="text-danger mb-2">{error}</div>
