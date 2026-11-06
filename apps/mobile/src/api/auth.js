@@ -17,3 +17,8 @@ export function forgotPassword(email) {
 export function getMe(token) {
   return apiRequest('/auth/me', {}, { token });
 }
+
+// Active sessions for the signed-in user. Token only, no org id required.
+export function getSessions(token) {
+  return apiRequest('/auth/sessions', {}, { token });
+}

@@ -5,7 +5,7 @@ import {
   Users,
   RefreshCw,
   Receipt,
-  CreditCard,
+  Code,
   Settings,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,8 +13,8 @@ import HomeScreen from '../screens/app/HomeScreen';
 import CustomersNavigator from './CustomersNavigator';
 import SubscriptionsNavigator from './SubscriptionsNavigator';
 import InvoicesNavigator from './InvoicesNavigator';
-import PaymentsNavigator from './PaymentsNavigator';
-import SettingsScreen from '../screens/app/SettingsScreen';
+import DeveloperNavigator from './DeveloperNavigator';
+import SettingsNavigator from './SettingsNavigator';
 import { colors } from '../theme';
 
 const TABS = [
@@ -22,8 +22,8 @@ const TABS = [
   { name: 'Customers', Icon: Users, Screen: CustomersNavigator },
   { name: 'Subscriptions', Icon: RefreshCw, Screen: SubscriptionsNavigator },
   { name: 'Invoices', Icon: Receipt, Screen: InvoicesNavigator },
-  { name: 'Payments', Icon: CreditCard, Screen: PaymentsNavigator },
-  { name: 'Settings', Icon: Settings, Screen: SettingsScreen },
+  { name: 'Developer', Icon: Code, Screen: DeveloperNavigator },
+  { name: 'Settings', Icon: Settings, Screen: SettingsNavigator },
 ];
 
 export default function AppNavigator() {

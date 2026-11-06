@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, CreditCard } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAuth from '../../../hooks/useAuth';
 import { getTokens } from '../../../store/auth';
@@ -229,6 +229,16 @@ export default function InvoiceDetailScreen({ navigation, route }) {
           <DetailRow label="Subtotal" value={fmtCurrency(invoice?.subtotalMinor)} />
           <DetailRow label="Total" value={fmtCurrency(invoice?.totalMinor)} />
         </SectionCard>
+
+        {/* View payments */}
+        <TouchableOpacity
+          className="bg-white rounded-lg border border-[#e3e8ee] py-3 flex-row items-center justify-center mb-4"
+          onPress={() => navigation.navigate('Payments')}
+          activeOpacity={0.7}
+        >
+          <CreditCard size={16} color="#3d4ed7" strokeWidth={1.5} />
+          <Text className="text-sm font-medium text-[#3d4ed7] ml-2">View payments</Text>
+        </TouchableOpacity>
 
         {/* Actions */}
         {invoice?.status === 'DRAFT' ? (
