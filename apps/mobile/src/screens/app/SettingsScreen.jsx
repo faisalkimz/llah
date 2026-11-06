@@ -24,41 +24,41 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       <AppBar title="Settings" />
 
       <View className="px-4 pt-6">
         {/* Avatar + name */}
         <View className="items-center mb-6">
-          <View className="w-16 h-16 rounded-full bg-[#0ea5e9] items-center justify-center mb-3">
+          <View className="w-16 h-16 rounded-full bg-[#3d4ed7] items-center justify-center mb-3">
             <Text className="text-white text-2xl font-bold">{initial}</Text>
           </View>
-          <Text className="text-base font-semibold text-[#0f172a]">{user?.name ?? '—'}</Text>
-          <Text className="text-sm text-[#64748b]">{user?.email ?? '—'}</Text>
+          <Text className="text-base font-semibold text-[#0a2540]">{user?.name ?? '—'}</Text>
+          <Text className="text-sm text-[#6b7c93]">{user?.email ?? '—'}</Text>
         </View>
 
         {/* Org row */}
-        <View className="bg-white rounded-2xl overflow-hidden mb-4">
+        <View className="bg-white rounded-lg overflow-hidden mb-4">
           <TouchableOpacity
             className="flex-row items-center px-4 py-4"
             onPress={() => setOrgModal(true)}
           >
-            <Building2 size={18} color="#64748b" strokeWidth={1.5} />
+            <Building2 size={18} color="#6b7c93" strokeWidth={1.5} />
             <View className="flex-1 ml-3">
-              <Text className="text-xs text-[#64748b]">Organisation</Text>
-              <Text className="text-sm font-medium text-[#0f172a]">{orgName ?? 'Not selected'}</Text>
+              <Text className="text-xs text-[#6b7c93]">Organization</Text>
+              <Text className="text-sm font-medium text-[#0a2540]">{orgName ?? 'Not selected'}</Text>
             </View>
-            <ChevronRight size={16} color="#94a3b8" strokeWidth={1.5} />
+            <ChevronRight size={16} color="#8898aa" strokeWidth={1.5} />
           </TouchableOpacity>
         </View>
 
         {/* Sign out */}
-        <View className="bg-white rounded-2xl overflow-hidden">
+        <View className="bg-white rounded-lg overflow-hidden">
           <TouchableOpacity
             className="flex-row items-center px-4 py-4"
             onPress={handleLogout}
           >
-            <LogOut size={18} color="#ef4444" strokeWidth={1.5} />
+            <LogOut size={18} color="#c41e3a" strokeWidth={1.5} />
             <Text className="text-sm font-medium text-red-500 ml-3">Sign out</Text>
           </TouchableOpacity>
         </View>
@@ -77,9 +77,9 @@ export default function SettingsScreen() {
             style={{ paddingBottom: insets.bottom + 16 }}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-base font-semibold text-[#0f172a]">Switch organisation</Text>
+              <Text className="text-base font-semibold text-[#0a2540]">Switch organization</Text>
               <TouchableOpacity onPress={() => setOrgModal(false)}>
-                <X size={20} color="#64748b" strokeWidth={1.5} />
+                <X size={20} color="#6b7c93" strokeWidth={1.5} />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -87,10 +87,10 @@ export default function SettingsScreen() {
               keyExtractor={item => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  className="py-3.5 border-b border-[#f1f5f9]"
+                  className="py-3.5 border-b border-[#e3e8ee]"
                   onPress={() => handleSelectOrg(item)}
                 >
-                  <Text className="text-sm text-[#0f172a]">{item.name}</Text>
+                  <Text className="text-sm text-[#0a2540]">{item.name}</Text>
                 </TouchableOpacity>
               )}
             />

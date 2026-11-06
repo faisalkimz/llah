@@ -205,8 +205,8 @@ export default function Dashboard() {
       <MetricStrip
         className="mb-6"
         items={[
-          { label: 'MRR', value: formatMoney(stats?.mrr), sub: 'Monthly recurring revenue' },
-          { label: 'ARR', value: formatMoney(stats?.arr), sub: 'Annual recurring revenue' },
+          { label: 'MRR', value: formatMoney(stats?.mrrMinor ?? stats?.mrr), sub: 'Monthly recurring revenue' },
+          { label: 'ARR', value: formatMoney(stats?.arrMinor ?? stats?.arr), sub: 'Annual recurring revenue' },
           { label: 'Open invoices', value: openInvoicesCount },
           { label: 'Failed payments', value: failedPaymentsCount },
         ]}

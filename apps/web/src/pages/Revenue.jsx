@@ -110,9 +110,9 @@ export default function Revenue() {
       <MetricStrip
         className="mb-6"
         items={[
-          { label: 'MRR', value: formatMoney(stats?.mrr), sub: 'Monthly recurring' },
-          { label: 'ARR', value: formatMoney(stats?.arr), sub: 'Annualized' },
-          { label: 'Total revenue', value: formatMoney(stats?.totalRevenue), sub: 'All time' },
+          { label: 'MRR', value: formatMoney(stats?.mrrMinor ?? stats?.mrr), sub: 'Monthly recurring' },
+          { label: 'ARR', value: formatMoney(stats?.arrMinor ?? stats?.arr), sub: 'Annualized' },
+          { label: 'Total revenue', value: formatMoney(stats?.totalRevenueMinor ?? stats?.totalRevenue), sub: 'All time' },
           { label: 'Churn rate', value: churnLabel, sub: 'Last 30 days' },
         ]}
       />

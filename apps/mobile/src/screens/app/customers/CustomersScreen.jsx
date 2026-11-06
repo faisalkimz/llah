@@ -87,9 +87,9 @@ export default function CustomersScreen({ navigation }) {
   // No-org state
   if (!orgId) {
     return (
-      <View className="flex-1 bg-[#f8fafc] items-center justify-center px-6">
-        <Text className="text-sm text-[#64748b] text-center">
-          Select an organisation to view customers
+      <View className="flex-1 bg-[#f6f9fc] items-center justify-center px-6">
+        <Text className="text-sm text-[#6b7c93] text-center">
+          Select an organization to view customers
         </Text>
       </View>
     );
@@ -98,12 +98,12 @@ export default function CustomersScreen({ navigation }) {
   // Error state
   if (query.isError && allCustomers.length === 0) {
     return (
-      <View className="flex-1 bg-[#f8fafc]">
+      <View className="flex-1 bg-[#f6f9fc]">
         <AppBar
           title="Customers"
           rightComponent={
             <TouchableOpacity onPress={() => navigation.navigate('CreateCustomer')}>
-              <Plus size={22} color="#0f172a" strokeWidth={1.5} />
+              <Plus size={22} color="#0a2540" strokeWidth={1.5} />
             </TouchableOpacity>
           }
         />
@@ -118,18 +118,18 @@ export default function CustomersScreen({ navigation }) {
   // Loading skeleton
   if (query.isLoading && allCustomers.length === 0) {
     return (
-      <View className="flex-1 bg-[#f8fafc]">
+      <View className="flex-1 bg-[#f6f9fc]">
         <AppBar
           title="Customers"
           rightComponent={
             <TouchableOpacity onPress={() => navigation.navigate('CreateCustomer')}>
-              <Plus size={22} color="#0f172a" strokeWidth={1.5} />
+              <Plus size={22} color="#0a2540" strokeWidth={1.5} />
             </TouchableOpacity>
           }
         />
-        <View className="mx-4 mt-4 bg-white rounded-2xl overflow-hidden">
+        <View className="mx-4 mt-4 bg-white rounded-lg overflow-hidden">
           {[...Array(8)].map((_, i) => (
-            <View key={i} className="flex-row items-center px-4 py-3 border-b border-[#e2e8f0]">
+            <View key={i} className="flex-row items-center px-4 py-3 border-b border-[#e3e8ee]">
               <SkeletonLoader width={40} height={40} borderRadius={20} />
               <View className="flex-1 ml-3">
                 <SkeletonLoader height={14} width="60%" borderRadius={6} />
@@ -143,45 +143,45 @@ export default function CustomersScreen({ navigation }) {
   }
 
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       <AppBar
         title="Customers"
         rightComponent={
           <TouchableOpacity onPress={() => navigation.navigate('CreateCustomer')}>
-            <Plus size={22} color="#0f172a" strokeWidth={1.5} />
+            <Plus size={22} color="#0a2540" strokeWidth={1.5} />
           </TouchableOpacity>
         }
       />
 
       {/* Search bar */}
-      <View className="mx-4 mt-3 mb-2 bg-white border border-[#e2e8f0] rounded-xl h-11 px-3 flex-row items-center">
-        <Search size={18} color="#64748b" strokeWidth={1.5} />
+      <View className="mx-4 mt-3 mb-2 bg-white border border-[#e3e8ee] rounded-xl h-11 px-3 flex-row items-center">
+        <Search size={18} color="#6b7c93" strokeWidth={1.5} />
         <TextInput
           value={search}
           onChangeText={handleSearchChange}
           placeholder="Search customers…"
-          placeholderTextColor="#94a3b8"
-          className="flex-1 ml-2 text-sm text-[#0f172a]"
+          placeholderTextColor="#8898aa"
+          className="flex-1 ml-2 text-sm text-[#0a2540]"
           autoCapitalize="none"
           autoCorrect={false}
         />
         {search ? (
           <TouchableOpacity onPress={() => handleSearchChange('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <X size={16} color="#64748b" strokeWidth={1.5} />
+            <X size={16} color="#6b7c93" strokeWidth={1.5} />
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <View className="mx-4 flex-1 bg-white rounded-2xl overflow-hidden">
+      <View className="mx-4 flex-1 bg-white rounded-lg overflow-hidden">
         <FlatList
           data={displayed}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0ea5e9" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3d4ed7" />
           }
           ItemSeparatorComponent={() => (
-            <View className="h-px bg-[#e2e8f0]" style={{ marginLeft: 72 }} />
+            <View className="h-px bg-[#e3e8ee]" style={{ marginLeft: 72 }} />
           )}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -189,32 +189,32 @@ export default function CustomersScreen({ navigation }) {
               onPress={() => navigation.navigate('CustomerDetail', { customerId: item.id })}
               activeOpacity={0.7}
             >
-              <View className="w-10 h-10 rounded-full bg-[#0ea5e9] items-center justify-center mr-3">
+              <View className="w-10 h-10 rounded-full bg-[#3d4ed7] items-center justify-center mr-3">
                 <Text className="text-white font-semibold text-base">
                   {(item.name ?? '?')[0].toUpperCase()}
                 </Text>
               </View>
               <View className="flex-1">
-                <Text className="text-sm font-medium text-[#0f172a]" numberOfLines={1}>
+                <Text className="text-sm font-medium text-[#0a2540]" numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text className="text-xs text-[#64748b] mt-0.5" numberOfLines={1}>
+                <Text className="text-xs text-[#6b7c93] mt-0.5" numberOfLines={1}>
                   {item.email}
                 </Text>
               </View>
-              <ChevronRight size={18} color="#94a3b8" strokeWidth={1.5} />
+              <ChevronRight size={18} color="#8898aa" strokeWidth={1.5} />
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             !query.isLoading ? (
               <View className="items-center justify-center py-16 px-6">
-                <Users size={48} color="#94a3b8" strokeWidth={1.5} />
-                <Text className="text-base font-medium text-[#0f172a] mt-4">No customers yet</Text>
-                <Text className="text-sm text-[#64748b] mt-1 text-center">
+                <Users size={48} color="#8898aa" strokeWidth={1.5} />
+                <Text className="text-base font-medium text-[#0a2540] mt-4">No customers yet</Text>
+                <Text className="text-sm text-[#6b7c93] mt-1 text-center">
                   Add your first customer to get started
                 </Text>
                 <TouchableOpacity
-                  className="bg-[#0f172a] rounded-xl px-5 py-2.5 mt-5 flex-row items-center"
+                  className="bg-[#0a2540] rounded-xl px-5 py-2.5 mt-5 flex-row items-center"
                   onPress={() => navigation.navigate('CreateCustomer')}
                 >
                   <Plus size={16} color="#ffffff" strokeWidth={1.5} />
@@ -230,9 +230,9 @@ export default function CustomersScreen({ navigation }) {
                 onPress={loadMore}
               >
                 {query.isFetching && offset > 0 ? (
-                  <ActivityIndicator size="small" color="#0ea5e9" />
+                  <ActivityIndicator size="small" color="#3d4ed7" />
                 ) : (
-                  <Text className="text-sm text-[#0ea5e9] font-medium">Load more</Text>
+                  <Text className="text-sm text-[#3d4ed7] font-medium">Load more</Text>
                 )}
               </TouchableOpacity>
             ) : null

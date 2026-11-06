@@ -5,16 +5,16 @@ export default function AppBar({ title, subtitle, rightComponent }) {
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="bg-white border-b border-[#e2e8f0] px-4 pb-3"
+      className="bg-white border-b border-[#e3e8ee] px-4 pb-3"
       style={{ paddingTop: insets.top + 8 }}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
-          <Text className="text-base font-semibold text-[#0f172a]" numberOfLines={1}>
+          <Text className="text-base font-semibold text-[#0a2540]" numberOfLines={1}>
             {title}
           </Text>
           {subtitle ? (
-            <Text className="text-xs text-[#64748b] mt-0.5" numberOfLines={1}>
+            <Text className="text-xs text-[#6b7c93] mt-0.5" numberOfLines={1}>
               {subtitle}
             </Text>
           ) : null}

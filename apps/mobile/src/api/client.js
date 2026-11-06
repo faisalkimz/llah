@@ -1,18 +1,25 @@
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-// Android emulator: 10.0.2.2 routes to host machine's localhost
-// iOS on real device: must use the PC's LAN IP (phone and PC must be on same WiFi)
-// iOS simulator: localhost works fine
-const getBaseUrl = () => {
-  if (Platform.OS === 'android') return 'http://10.0.2.2:4000/v1';
-  // For real iOS device, use your PC's local network IP
-  // Run `ipconfig` on PC and find your WiFi IPv4 address
-  return 'http://192.168.1.171:4000/v1';
-};
+// The phone must call this PC, not a stale LAN address.
+// Expo already knows the host it used to load the bundle.
+function apiOrigin() {
+  const fromEnv = process.env.EXPO_PUBLIC_API_URL;
+  if (fromEnv) return String(fromEnv).replace(/\/$/, '');
 
-const BASE = getBaseUrl();
+  const raw =
+    Constants.expoGoConfig?.debuggerHost ||
+    Constants.expoConfig?.hostUri ||
+    '';
+  let host = String(raw).split(':')[0];
+  if (!host || host === 'localhost' || host === '127.0.0.1') {
+    host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+  }
+  return `http://${host}:4000/v1`;
+}
 
 export async function apiRequest(path, options = {}, { token, orgId } = {}) {
+  const origin = apiOrigin();
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -20,10 +27,23 @@ export async function apiRequest(path, options = {}, { token, orgId } = {}) {
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${origin}${path}`, {
+      ...options,
+      headers,
+    });
+  } catch (e) {
+    const detail = e?.message || 'Network request failed';
+    const timedOut = /timed out/i.test(detail);
+    const err = new Error(
+      timedOut
+        ? `The API at ${origin} did not respond. Keep the API running, and keep the phone on the same Wi-Fi as this computer.`
+        : `Could not reach the API at ${origin}. ${detail}`,
+    );
+    err.cause = e;
+    throw err;
+  }
 
   const body = await response.json().catch(() => ({}));
 

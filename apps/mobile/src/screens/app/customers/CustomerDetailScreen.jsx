@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Clipboard } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Copy, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Pencil, Copy, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAuth from '../../../hooks/useAuth';
 import { getTokens } from '../../../store/auth';
@@ -41,10 +41,10 @@ export default function CustomerDetailScreen({ navigation, route }) {
   // Loading state
   if (query.isLoading) {
     return (
-      <View className="flex-1 bg-[#f8fafc]">
+      <View className="flex-1 bg-[#f6f9fc]">
         {/* Custom header */}
         <View
-          className="bg-white border-b border-[#e2e8f0] px-2 pb-3"
+          className="bg-white border-b border-[#e3e8ee] px-2 pb-3"
           style={{ paddingTop: insets.top + 8 }}
         >
           <View className="flex-row items-center">
@@ -53,9 +53,9 @@ export default function CustomerDetailScreen({ navigation, route }) {
               className="p-2"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <ChevronLeft size={22} color="#0f172a" strokeWidth={1.5} />
+              <ChevronLeft size={22} color="#0a2540" strokeWidth={1.5} />
             </TouchableOpacity>
-            <Text className="flex-1 text-base font-semibold text-[#0f172a] ml-1">Customer</Text>
+            <Text className="flex-1 text-base font-semibold text-[#0a2540] ml-1">Customer</Text>
           </View>
         </View>
         <ScrollView className="px-4 pt-4">
@@ -70,9 +70,9 @@ export default function CustomerDetailScreen({ navigation, route }) {
   // Error state
   if (query.isError) {
     return (
-      <View className="flex-1 bg-[#f8fafc]">
+      <View className="flex-1 bg-[#f6f9fc]">
         <View
-          className="bg-white border-b border-[#e2e8f0] px-2 pb-3"
+          className="bg-white border-b border-[#e3e8ee] px-2 pb-3"
           style={{ paddingTop: insets.top + 8 }}
         >
           <View className="flex-row items-center">
@@ -81,9 +81,9 @@ export default function CustomerDetailScreen({ navigation, route }) {
               className="p-2"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <ChevronLeft size={22} color="#0f172a" strokeWidth={1.5} />
+              <ChevronLeft size={22} color="#0a2540" strokeWidth={1.5} />
             </TouchableOpacity>
-            <Text className="flex-1 text-base font-semibold text-[#0f172a] ml-1">Customer</Text>
+            <Text className="flex-1 text-base font-semibold text-[#0a2540] ml-1">Customer</Text>
           </View>
         </View>
         <ErrorView
@@ -95,10 +95,10 @@ export default function CustomerDetailScreen({ navigation, route }) {
   }
 
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       {/* Custom header with back + edit */}
       <View
-        className="bg-white border-b border-[#e2e8f0] px-2 pb-3"
+        className="bg-white border-b border-[#e3e8ee] px-2 pb-3"
         style={{ paddingTop: insets.top + 8 }}
       >
         <View className="flex-row items-center">
@@ -107,9 +107,9 @@ export default function CustomerDetailScreen({ navigation, route }) {
             className="p-2"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ChevronLeft size={22} color="#0f172a" strokeWidth={1.5} />
+            <ChevronLeft size={22} color="#0a2540" strokeWidth={1.5} />
           </TouchableOpacity>
-          <Text className="flex-1 text-base font-semibold text-[#0f172a] ml-1" numberOfLines={1}>
+          <Text className="flex-1 text-base font-semibold text-[#0a2540] ml-1" numberOfLines={1}>
             {customer?.name ?? 'Customer'}
           </Text>
           <TouchableOpacity
@@ -117,7 +117,7 @@ export default function CustomerDetailScreen({ navigation, route }) {
             className="p-2"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Pencil size={20} color="#0f172a" strokeWidth={1.5} />
+            <Pencil size={20} color="#0a2540" strokeWidth={1.5} />
           </TouchableOpacity>
         </View>
       </View>
@@ -127,32 +127,32 @@ export default function CustomerDetailScreen({ navigation, route }) {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
       >
         {/* Header card */}
-        <View className="bg-white rounded-2xl p-5 mb-4 items-center">
-          <View className="w-16 h-16 rounded-full bg-[#0ea5e9] items-center justify-center mb-3">
+        <View className="bg-white rounded-lg p-5 mb-4 items-center">
+          <View className="w-16 h-16 rounded-full bg-[#3d4ed7] items-center justify-center mb-3">
             <Text className="text-2xl font-bold text-white">
               {(customer?.name ?? '?')[0].toUpperCase()}
             </Text>
           </View>
-          <Text className="text-lg font-semibold text-[#0f172a] mb-1">{customer?.name}</Text>
-          <Text className="text-sm text-[#64748b]">{customer?.email}</Text>
+          <Text className="text-lg font-semibold text-[#0a2540] mb-1">{customer?.name}</Text>
+          <Text className="text-sm text-[#6b7c93]">{customer?.email}</Text>
           {customer?.externalId ? (
-            <Text className="text-xs font-mono text-[#64748b] mt-1">{customer.externalId}</Text>
+            <Text className="text-xs font-mono text-[#6b7c93] mt-1">{customer.externalId}</Text>
           ) : null}
         </View>
 
         {/* Stats row */}
         <View className="flex-row mb-4">
-          <View className="flex-1 bg-white rounded-2xl p-4 items-center mr-2">
-            <Text className="text-2xl font-semibold text-[#0f172a] tabular-nums">
+          <View className="flex-1 bg-white rounded-lg p-4 items-center mr-2">
+            <Text className="text-2xl font-semibold text-[#0a2540] tabular-nums">
               {customer?._count?.subscriptions ?? '—'}
             </Text>
-            <Text className="text-xs text-[#64748b] mt-1">Subscriptions</Text>
+            <Text className="text-xs text-[#6b7c93] mt-1">Subscriptions</Text>
           </View>
-          <View className="flex-1 bg-white rounded-2xl p-4 items-center ml-2">
-            <Text className="text-2xl font-semibold text-[#0f172a] tabular-nums">
+          <View className="flex-1 bg-white rounded-lg p-4 items-center ml-2">
+            <Text className="text-2xl font-semibold text-[#0a2540] tabular-nums">
               {customer?._count?.invoices ?? '—'}
             </Text>
-            <Text className="text-xs text-[#64748b] mt-1">Invoices</Text>
+            <Text className="text-xs text-[#6b7c93] mt-1">Invoices</Text>
           </View>
         </View>
 
@@ -165,28 +165,16 @@ export default function CustomerDetailScreen({ navigation, route }) {
             onPress={() => Clipboard.setString(customer?.id ?? '')}
             activeOpacity={0.7}
           >
-            <Text className="text-sm text-[#64748b]">Customer ID</Text>
+            <Text className="text-sm text-[#6b7c93]">Customer ID</Text>
             <View className="flex-row items-center flex-shrink">
-              <Text className="text-sm text-[#0f172a] font-mono mr-2" numberOfLines={1}>
+              <Text className="text-sm text-[#0a2540] font-mono mr-2" numberOfLines={1}>
                 {customer?.id}
               </Text>
-              <Copy size={14} color="#64748b" strokeWidth={1.5} />
+              <Copy size={14} color="#6b7c93" strokeWidth={1.5} />
             </View>
           </TouchableOpacity>
         </SectionCard>
 
-        {/* Quick actions */}
-        <SectionCard title="Actions">
-          <DetailRow
-            label="View subscriptions"
-            value=""
-            onPress={() => {}}
-          />
-          <View className="flex-row items-center justify-between px-4 py-3">
-            <Text className="text-sm text-[#64748b]">View invoices</Text>
-            <ChevronRight size={18} color="#94a3b8" strokeWidth={1.5} />
-          </View>
-        </SectionCard>
       </ScrollView>
     </View>
   );

@@ -22,7 +22,7 @@ export default function SkeletonLoader({ width, height, borderRadius = 8, classN
           width: width ?? '100%',
           height: height ?? 16,
           borderRadius,
-          backgroundColor: '#e2e8f0',
+          backgroundColor: '#e3e8ee',
           opacity,
         },
       ]}

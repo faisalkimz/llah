@@ -9,8 +9,8 @@ export default function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#f8fafc]">
-        <ActivityIndicator size="large" color="#0ea5e9" />
+      <View className="flex-1 items-center justify-center bg-[#f6f9fc]">
+        <ActivityIndicator size="large" color="#3d4ed7" />
       </View>
     );
   }
