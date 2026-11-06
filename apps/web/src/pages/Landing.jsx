@@ -194,15 +194,7 @@ export default function Landing() {
               Get an API key <ArrowRight size={16} />
             </Link>
           </div>
-          <pre className="overflow-x-auto rounded-2xl bg-[#0a2540] p-6 text-[13px] leading-6 text-[#d6e2f0]">{`POST /v1/usage-events
-Authorization: Bearer llah_live_...
-
-{
-  "idempotencyKey": "evt_2048",
-  "customerId": "cus_...",
-  "meterId": "mtr_...",
-  "quantity": 1200
-}`}</pre>
+          <img src="/marketing/dash-developer.svg" alt="Llah API request preview" className="w-full rounded-2xl" />
         </div>
       </section>
 
@@ -211,15 +203,18 @@ Authorization: Bearer llah_live_...
           <h2 className="text-[36px] font-semibold tracking-tight">How a period closes</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-4">
             {[
-              ['01', 'Meter', 'Define the unit you sell: requests, tokens, seats, or anything else you count.'],
-              ['02', 'Price', 'Attach a flat, per-unit, or tiered price to a product and a plan.'],
-              ['03', 'Subscribe', 'Put a customer on that plan so usage lands on the right account.'],
-              ['04', 'Invoice', 'Close the period. The invoice, payment, and revenue views read the same records.'],
-            ].map(([n, title, body]) => (
-              <li key={n}>
-                <div className="text-[13px] font-medium text-[#8898aa]">{n}</div>
-                <h3 className="mt-2 text-[18px] font-semibold">{title}</h3>
-                <p className="mt-2 text-[14px] leading-6 text-[#425466]">{body}</p>
+              ['01', 'Meter', 'Define the unit you sell: requests, tokens, seats, or anything else you count.', '/marketing/step-meter.svg'],
+              ['02', 'Price', 'Attach a flat, per-unit, or tiered price to a product and a plan.', '/marketing/step-price.svg'],
+              ['03', 'Subscribe', 'Put a customer on that plan so usage lands on the right account.', '/marketing/step-subscribe.svg'],
+              ['04', 'Invoice', 'Close the period. The invoice, payment, and revenue views read the same records.', '/marketing/step-invoice.svg'],
+            ].map(([n, title, body, art]) => (
+              <li key={n} className="overflow-hidden rounded-2xl border border-[#e3e8ee] bg-white">
+                <img src={art} alt="" className="h-32 w-full object-cover" />
+                <div className="p-4">
+                  <div className="text-[13px] font-medium text-[#8898aa]">{n}</div>
+                  <h3 className="mt-2 text-[18px] font-semibold">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-6 text-[#425466]">{body}</p>
+                </div>
               </li>
             ))}
           </ol>
@@ -232,17 +227,20 @@ Authorization: Bearer llah_live_...
           <p className="mt-3 max-w-xl text-[16px] text-[#425466]">Billing sits next to the tools you use to run the account. Same sign-in, same organization.</p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: Users, title: 'Team', body: 'Invite people into the organization and keep membership on the workspace.' },
-              { icon: Shield, title: 'Audit log', body: 'Sensitive changes are recorded so you can see who did what.' },
-              { icon: Wallet, title: 'Credits and refunds', body: 'Apply a credit or refund against a real invoice or payment.' },
-              { icon: Percent, title: 'Tax and coupons', body: 'Rates and coupon codes are stored with the organization, then used when a bill is built.' },
-              { icon: Bell, title: 'Alerts', body: 'Watch for conditions you set, such as failed payments, and keep the notification in the workspace.' },
-              { icon: Layers, title: 'Jobs', body: 'Background work, including report generation, shows its status instead of disappearing.' },
+              { icon: Users, title: 'Team', body: 'Invite people into the organization and keep membership on the workspace.', art: '/marketing/dash-customers.svg' },
+              { icon: Shield, title: 'Audit log', body: 'Sensitive changes are recorded so you can see who did what.', art: '/marketing/dash-developer.svg' },
+              { icon: Wallet, title: 'Credits and refunds', body: 'Apply a credit or refund against a real invoice or payment.', art: '/marketing/dash-payments.svg' },
+              { icon: Percent, title: 'Tax and coupons', body: 'Rates and coupon codes are stored with the organization, then used when a bill is built.', art: '/marketing/dash-invoice.svg' },
+              { icon: Bell, title: 'Alerts', body: 'Watch for conditions you set, such as failed payments, and keep the notification in the workspace.', art: '/marketing/dash-payments.svg' },
+              { icon: Layers, title: 'Jobs', body: 'Background work, including report generation, shows its status instead of disappearing.', art: '/marketing/dash-revenue.svg' },
             ].map(item => (
-              <article key={item.title} className="rounded-2xl border border-[#e3e8ee] bg-white p-5">
-                <item.icon size={18} strokeWidth={1.75} className="text-[#3d4ed7]" />
-                <h3 className="mt-3 text-[16px] font-semibold">{item.title}</h3>
-                <p className="mt-2 text-[14px] leading-6 text-[#425466]">{item.body}</p>
+              <article key={item.title} className="overflow-hidden rounded-2xl border border-[#e3e8ee] bg-white">
+                <img src={item.art} alt="" className="h-36 w-full object-cover object-left-top" />
+                <div className="p-5">
+                  <item.icon size={18} strokeWidth={1.75} className="text-[#3d4ed7]" />
+                  <h3 className="mt-3 text-[16px] font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-[14px] leading-6 text-[#425466]">{item.body}</p>
+                </div>
               </article>
             ))}
           </div>
@@ -257,26 +255,7 @@ Authorization: Bearer llah_live_...
               Charges, credits, and tax stay as separate lines. Corrections are new entries, so an earlier invoice does not get rewritten in place.
             </p>
           </div>
-          <div className="rounded-2xl border border-[#e3e8ee] bg-white">
-            <div className="flex items-center justify-between border-b border-[#e3e8ee] px-5 py-3">
-              <span className="text-[13px] font-medium">Example invoice lines</span>
-              <span className="text-[12px] text-[#8898aa]">Sample layout</span>
-            </div>
-            {[
-              ['Usage', 'API requests, tier 1', 'Charge'],
-              ['Usage', 'API requests, tier 2', 'Charge'],
-              ['Credit', 'Applied balance', 'Credit'],
-              ['Tax', 'Configured rate', 'Tax'],
-            ].map(([kind, label, tag]) => (
-              <div key={label} className="flex items-center justify-between border-b border-[#e3e8ee] px-5 py-3 last:border-0">
-                <div>
-                  <div className="text-[14px] font-medium">{label}</div>
-                  <div className="text-[12px] text-[#8898aa]">{kind}</div>
-                </div>
-                <span className="rounded-full bg-[#f6f9fc] px-2 py-0.5 text-[11px] font-medium text-[#425466]">{tag}</span>
-              </div>
-            ))}
-          </div>
+          <img src="/marketing/dash-invoice.svg" alt="Llah invoice preview" className="w-full rounded-2xl border border-[#e3e8ee]" />
         </div>
       </section>
 
@@ -284,6 +263,7 @@ Authorization: Bearer llah_live_...
         <div className="mx-auto max-w-3xl px-5 text-center">
           <h2 className="text-[40px] font-semibold tracking-tight">Open a workspace and send the first event</h2>
           <p className="mt-4 text-[16px] text-[#c5d0de]">Same account on the web and in the Llah app.</p>
+          <img src="/marketing/dash-revenue.svg" alt="" className="mx-auto mt-10 w-full max-w-3xl rounded-2xl border border-white/10" />
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link id="final-cta" to="/register" className="rounded-full bg-white px-6 py-3 text-[15px] font-medium text-[#0a2540]">Create a workspace</Link>
             <Link to="/login" className="rounded-full px-6 py-3 text-[15px] text-white hover:bg-white/10">Sign in</Link>

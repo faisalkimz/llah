@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" fill="none">
+  <rect width="720" height="520" rx="24" fill="#0a2540"/>
+  <rect x="28" y="28" width="664" height="44" rx="10" fill="#16324f"/>
+  <circle cx="52" cy="50" r="6" fill="#c41e3a"/>
+  <circle cx="72" cy="50" r="6" fill="#e0a100"/>
+  <circle cx="92" cy="50" r="6" fill="#0d9488"/>
+  <text x="48" y="120" fill="#8b97f0" font-family="Consolas,monospace" font-size="16">POST /v1/usage-events</text>
+  <text x="48" y="156" fill="#9aadc2" font-family="Consolas,monospace" font-size="15">Authorization: Bearer llah_live_&</text>
+  <text x="48" y="204" fill="#d6e2f0" font-family="Consolas,monospace" font-size="15">{</text>
+  <text x="72" y="236" fill="#f6c7b0" font-family="Consolas,monospace" font-size="15">"idempotencyKey": "evt_2048"</text>
+  <text x="72" y="268" fill="#d6e2f0" font-family="Consolas,monospace" font-size="15">"customerId": "cus_&"</text>
+  <text x="72" y="300" fill="#d6e2f0" font-family="Consolas,monospace" font-size="15">"meterId": "mtr_&"</text>
+  <text x="72" y="332" fill="#c9efe6" font-family="Consolas,monospace" font-size="15">"quantity": 1200</text>
+  <text x="48" y="364" fill="#d6e2f0" font-family="Consolas,monospace" font-size="15">}</text>
+  <rect x="48" y="408" width="180" height="36" rx="18" fill="#3d4ed7"/>
+  <text x="78" y="431" fill="#ffffff" font-family="Arial,sans-serif" font-size="14">201 Created</text>
+</svg>

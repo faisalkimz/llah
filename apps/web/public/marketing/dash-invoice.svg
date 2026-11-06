@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" fill="none">
+  <rect width="720" height="480" rx="24" fill="#ffffff"/>
+  <rect width="720" height="72" fill="#f6f9fc"/>
+  <text x="36" y="46" fill="#0a2540" font-family="Arial,sans-serif" font-size="20" font-weight="700">Invoice</text>
+  <rect x="36" y="104" width="648" height="56" rx="12" fill="#f6f9fc"/>
+  <rect x="56" y="124" width="180" height="12" rx="6" fill="#0a2540"/>
+  <rect x="520" y="120" width="72" height="24" rx="12" fill="#eef0fb"/>
+  <rect x="36" y="176" width="648" height="56" rx="12" fill="#f6f9fc"/>
+  <rect x="56" y="196" width="150" height="12" rx="6" fill="#0a2540"/>
+  <rect x="520" y="192" width="72" height="24" rx="12" fill="#e7f7f4"/>
+  <rect x="36" y="248" width="648" height="56" rx="12" fill="#f6f9fc"/>
+  <rect x="56" y="268" width="120" height="12" rx="6" fill="#0a2540"/>
+  <rect x="520" y="264" width="72" height="24" rx="12" fill="#fff4e8"/>
+  <rect x="36" y="336" width="648" height="88" rx="16" fill="#0a2540"/>
+  <text x="60" y="388" fill="#ffffff" font-family="Arial,sans-serif" font-size="16">Lines stay separate</text>
+</svg>
