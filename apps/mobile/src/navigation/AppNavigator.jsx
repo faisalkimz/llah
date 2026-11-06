@@ -52,7 +52,7 @@ export default function AppNavigator() {
               accessibilityState={{ selected }}
               accessibilityLabel={name}
             >
-              <Icon size={20} color={color} strokeWidth={1.75} />
+              <Icon size={20} color={color} strokeWidth={1.5} />
               <Text style={{ color, fontSize: 11, marginTop: 2, fontWeight: selected ? '600' : '500' }}>
                 {name}
               </Text>

@@ -89,6 +89,12 @@ export default function SubscriptionDetailScreen({ navigation, route }) {
       queryClient.invalidateQueries({ queryKey: ['subscription', orgId, id] });
       navigation.goBack();
     },
+    onError: (error) => {
+      Alert.alert(
+        'Could not cancel subscription',
+        error?.message ?? 'Something went wrong. Please try again.',
+      );
+    },
   });
 
   function confirmCancel() {
