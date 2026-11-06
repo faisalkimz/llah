@@ -1,17 +1,28 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { LayoutDashboard, Users, Code2, Settings } from 'lucide-react-native';
+import {
+  LayoutDashboard,
+  Users,
+  RefreshCw,
+  Receipt,
+  CreditCard,
+  Settings,
+} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/app/HomeScreen';
 import CustomersNavigator from './CustomersNavigator';
-import DeveloperScreen from '../screens/app/DeveloperScreen';
+import SubscriptionsNavigator from './SubscriptionsNavigator';
+import InvoicesNavigator from './InvoicesNavigator';
+import PaymentsNavigator from './PaymentsNavigator';
 import SettingsScreen from '../screens/app/SettingsScreen';
 import { colors } from '../theme';
 
 const TABS = [
   { name: 'Home', Icon: LayoutDashboard, Screen: HomeScreen },
   { name: 'Customers', Icon: Users, Screen: CustomersNavigator },
-  { name: 'Developer', Icon: Code2, Screen: DeveloperScreen },
+  { name: 'Subscriptions', Icon: RefreshCw, Screen: SubscriptionsNavigator },
+  { name: 'Invoices', Icon: Receipt, Screen: InvoicesNavigator },
+  { name: 'Payments', Icon: CreditCard, Screen: PaymentsNavigator },
   { name: 'Settings', Icon: Settings, Screen: SettingsScreen },
 ];
 
