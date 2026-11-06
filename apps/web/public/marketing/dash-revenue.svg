@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" fill="none">
+  <rect width="960" height="600" rx="24" fill="#f6f9fc"/>
+  <rect x="0" y="0" width="200" height="600" fill="#ffffff"/>
+  <rect x="24" y="28" width="28" height="28" rx="6" fill="#0a2540"/>
+  <text x="32" y="47" fill="#ffffff" font-family="Arial,sans-serif" font-size="14" font-weight="700">L</text>
+  <text x="60" y="47" fill="#0a2540" font-family="Arial,sans-serif" font-size="14" font-weight="700">Llah</text>
+  <rect x="20" y="84" width="160" height="32" rx="8" fill="#eef0fb"/>
+  <rect x="32" y="96" width="72" height="8" rx="4" fill="#3d4ed7"/>
+  <rect x="32" y="136" width="90" height="8" rx="4" fill="#d5deea"/>
+  <rect x="32" y="160" width="110" height="8" rx="4" fill="#d5deea"/>
+  <rect x="32" y="184" width="80" height="8" rx="4" fill="#d5deea"/>
+  <rect x="224" y="28" width="708" height="544" rx="16" fill="#ffffff"/>
+  <text x="252" y="68" fill="#0a2540" font-family="Arial,sans-serif" font-size="20" font-weight="700">Revenue</text>
+  <rect x="252" y="96" width="150" height="72" rx="12" fill="#f6f9fc"/>
+  <rect x="418" y="96" width="150" height="72" rx="12" fill="#f6f9fc"/>
+  <rect x="584" y="96" width="150" height="72" rx="12" fill="#f6f9fc"/>
+  <rect x="750" y="96" width="150" height="72" rx="12" fill="#f6f9fc"/>
+  <rect x="268" y="116" width="48" height="8" rx="4" fill="#8898aa"/>
+  <rect x="434" y="116" width="48" height="8" rx="4" fill="#8898aa"/>
+  <rect x="600" y="116" width="48" height="8" rx="4" fill="#8898aa"/>
+  <rect x="766" y="116" width="48" height="8" rx="4" fill="#8898aa"/>
+  <rect x="268" y="134" width="80" height="14" rx="4" fill="#0a2540"/>
+  <rect x="434" y="134" width="70" height="14" rx="4" fill="#0a2540"/>
+  <rect x="600" y="134" width="60" height="14" rx="4" fill="#0a2540"/>
+  <rect x="766" y="134" width="50" height="14" rx="4" fill="#0a2540"/>
+  <polyline points="270,470 340,420 410,440 480,360 550,380 620,300 690,320 760,240 840,260" stroke="#3d4ed7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="840" cy="260" r="6" fill="#3d4ed7"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" fill="none">
+  <rect width="960" height="600" rx="24" fill="#ffffff"/>
+  <text x="40" y="56" fill="#0a2540" font-family="Arial,sans-serif" font-size="22" font-weight="700">Customers</text>
+  <rect x="760" y="32" width="160" height="36" rx="18" fill="#3d4ed7"/>
+  <text x="792" y="55" fill="#ffffff" font-family="Arial,sans-serif" font-size="13">New customer</text>
+  <rect x="40" y="88" width="880" height="44" rx="10" fill="#f6f9fc"/>
+  <rect x="56" y="106" width="120" height="8" rx="4" fill="#8898aa"/>
+  <rect x="40" y="148" width="880" height="1" fill="#e3e8ee"/>
+  <g font-family="Arial,sans-serif" font-size="14" fill="#0a2540">
+    <text x="56" y="190">Northwind</text>
+    <text x="56" y="246">Harbor Lab</text>
+    <text x="56" y="302">Fieldnote</text>
+    <text x="56" y="358">Cedar API</text>
+    <text x="56" y="414">Juniper</text>
+  </g>
+  <g>
+    <rect x="760" y="172" width="64" height="22" rx="11" fill="#e7f7f4"/>
+    <rect x="760" y="228" width="64" height="22" rx="11" fill="#eef0fb"/>
+    <rect x="760" y="284" width="64" height="22" rx="11" fill="#e7f7f4"/>
+    <rect x="760" y="340" width="64" height="22" rx="11" fill="#fdecec"/>
+    <rect x="760" y="396" width="64" height="22" rx="11" fill="#eef0fb"/>
+  </g>
+</svg>

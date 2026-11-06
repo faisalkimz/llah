@@ -84,8 +84,17 @@ export default function Landing() {
             </a>
           </div>
         </div>
-        <div className="relative mx-auto max-w-5xl px-5 pb-20">
+        <div className="relative mx-auto max-w-5xl px-5 pb-10">
           <HeroScene />
+        </div>
+        <div className="relative mx-auto grid max-w-6xl gap-4 px-5 pb-20 md:grid-cols-3">
+          {[
+            ['/marketing/dash-revenue.svg', 'Revenue preview'],
+            ['/marketing/dash-customers.svg', 'Customers preview'],
+            ['/marketing/dash-payments.svg', 'Payments preview'],
+          ].map(([src, alt]) => (
+            <img key={src} src={src} alt={alt} className="w-full rounded-2xl border border-[#e3e8ee] bg-white shadow-sm" />
+          ))}
         </div>
       </section>
 
@@ -120,6 +129,7 @@ export default function Landing() {
             <p className="mt-4 max-w-md text-[15px] leading-7 text-[#c5d0de]">
               Put a customer on a plan. When the period ends, Llah aggregates the meters on that plan and writes the invoice from those totals.
             </p>
+            <img src="/marketing/billing.svg" alt="" className="mt-8 w-full rounded-2xl" />
             <ul className="mt-8 space-y-3 text-[14px] text-[#d6e2f0]">
               {['Flat, per-unit, and tiered prices', 'Draft, open, paid, and void invoices', 'Credits, coupons, tax, and adjustments on the same bill'].map(line => (
                 <li key={line} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8b97f0]" />{line}</li>
@@ -132,6 +142,7 @@ export default function Landing() {
             <p className="mt-4 text-[15px] leading-7 text-[#425466]">
               Recurring revenue, open invoices, and failed payments are read from the same records the billing pages use. There is no second set of numbers.
             </p>
+            <img src="/marketing/dash-revenue.svg" alt="Llah revenue screen" className="mt-8 w-full rounded-2xl border border-[#e3e8ee]" />
             <div className="mt-8 grid grid-cols-2 gap-3">
               {[
                 ['MRR', 'From active subscriptions'],
@@ -155,13 +166,16 @@ export default function Landing() {
           <p className="mt-3 max-w-2xl text-[16px] text-[#425466]">The meter is yours. Llah only needs a customer, a quantity, and the price you already configured.</p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {[
-              { title: 'SaaS', body: 'Bill seats, workspaces, or feature usage. Subscriptions keep the plan, and meters catch anything that is not a flat fee.' },
-              { title: 'AI products', body: 'Count tokens, generations, or minutes. Price the first block one way and the rest another with tiers.' },
-              { title: 'APIs', body: 'Each request can be a usage event. Idempotency keys stop a retry from billing the same call twice.' },
+              { title: 'SaaS', body: 'Bill seats, workspaces, or feature usage. Subscriptions keep the plan, and meters catch anything that is not a flat fee.', art: '/marketing/flow.svg' },
+              { title: 'AI products', body: 'Count tokens, generations, or minutes. Price the first block one way and the rest another with tiers.', art: '/marketing/mesh.svg' },
+              { title: 'APIs', body: 'Each request can be a usage event. Idempotency keys stop a retry from billing the same call twice.', art: '/marketing/billing.svg' },
             ].map(item => (
-              <article key={item.title} className="rounded-2xl bg-[#f6f9fc] p-6">
-                <h3 className="text-[18px] font-semibold">{item.title}</h3>
-                <p className="mt-3 text-[14px] leading-6 text-[#425466]">{item.body}</p>
+              <article key={item.title} className="overflow-hidden rounded-2xl bg-[#f6f9fc]">
+                <img src={item.art} alt="" className="h-40 w-full object-cover" />
+                <div className="p-6">
+                  <h3 className="text-[18px] font-semibold">{item.title}</h3>
+                  <p className="mt-3 text-[14px] leading-6 text-[#425466]">{item.body}</p>
+                </div>
               </article>
             ))}
           </div>
