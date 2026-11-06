@@ -5,7 +5,7 @@ import EmptyView from '../../components/ui/EmptyView';
 
 export default function DeveloperScreen() {
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       <AppBar title="Developer" />
       <EmptyView
         icon={Code2}

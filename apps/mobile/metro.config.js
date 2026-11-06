@@ -16,4 +16,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-module.exports = withNativeWind(config, { input: './global.css' });
+module.exports = withNativeWind(config, {
+  input: path.join(projectRoot, 'global.css'),
+  configPath: path.join(projectRoot, 'tailwind.config.js'),
+});

@@ -5,7 +5,7 @@ import EmptyView from '../../components/ui/EmptyView';
 
 export default function CustomersScreen() {
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       <AppBar title="Customers" />
       <EmptyView
         icon={Users}

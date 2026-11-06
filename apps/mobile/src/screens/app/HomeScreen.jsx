@@ -117,15 +117,15 @@ export default function HomeScreen() {
   const notifList = Array.isArray(notifs.data) ? notifs.data : (notifs.data?.notifications ?? []);
 
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       <AppBar
         title={`${greeting()}, ${firstName}`}
         subtitle={orgName ?? undefined}
         rightComponent={
           <TouchableOpacity className="relative p-1">
-            <Bell size={22} color="#0f172a" strokeWidth={1.5} />
+            <Bell size={22} color="#0a2540" strokeWidth={1.5} />
             {unreadCount > 0 && (
-              <View className="absolute top-0 right-0 bg-[#0ea5e9] rounded-full w-4 h-4 items-center justify-center">
+              <View className="absolute top-0 right-0 bg-[#3d4ed7] rounded-full w-4 h-4 items-center justify-center">
                 <Text className="text-white text-[9px] font-bold">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </Text>
@@ -138,7 +138,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0ea5e9" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3d4ed7" />
         }
       >
         {hasError && !refreshing && (
@@ -150,7 +150,7 @@ export default function HomeScreen() {
 
         {/* Stat Cards */}
         <View className="pt-4 pb-2">
-          <Text className="px-4 text-xs font-medium text-[#64748b] uppercase tracking-widest mb-3">
+          <Text className="px-4 text-[13px] font-medium text-[#0a2540] mb-3">
             Overview
           </Text>
           <ScrollView
@@ -192,7 +192,7 @@ export default function HomeScreen() {
 
         {/* Needs Attention */}
         <View className="mt-4 px-4">
-          <Text className="text-xs font-medium text-[#64748b] uppercase tracking-widest mb-3">
+          <Text className="text-[13px] font-medium text-[#0a2540] mb-3">
             Needs attention
           </Text>
           {failed.isLoading ? (
@@ -201,20 +201,20 @@ export default function HomeScreen() {
               <SkeletonLoader height={56} borderRadius={12} className="mb-2" />
             </>
           ) : failedList.length === 0 ? (
-            <View className="bg-white rounded-2xl px-4 py-4 items-center">
-              <Text className="text-sm text-[#64748b]">No failed payments</Text>
+            <View className="bg-white rounded-lg px-4 py-4 items-center">
+              <Text className="text-sm text-[#6b7c93]">No failed payments</Text>
             </View>
           ) : (
             failedList.map((p, i) => (
               <View
                 key={p.id ?? i}
-                className="bg-white rounded-2xl px-4 py-3 mb-2 flex-row items-center justify-between"
+                className="bg-white rounded-lg px-4 py-3 mb-2 flex-row items-center justify-between"
               >
                 <View>
-                  <Text className="text-sm font-semibold text-[#0f172a]">
+                  <Text className="text-sm font-semibold text-[#0a2540]">
                     {formatCurrency(p.amountMinor ?? p.amount)}
                   </Text>
-                  <Text className="text-xs text-[#64748b] mt-0.5">
+                  <Text className="text-xs text-[#6b7c93] mt-0.5">
                     {formatDate(p.createdAt ?? p.date)}
                   </Text>
                 </View>
@@ -226,7 +226,7 @@ export default function HomeScreen() {
 
         {/* Notifications */}
         <View className="mt-4 px-4 pb-8">
-          <Text className="text-xs font-medium text-[#64748b] uppercase tracking-widest mb-3">
+          <Text className="text-[13px] font-medium text-[#0a2540] mb-3">
             Notifications
           </Text>
           {notifs.isLoading ? (
@@ -235,22 +235,22 @@ export default function HomeScreen() {
               <SkeletonLoader height={64} borderRadius={12} className="mb-2" />
             </>
           ) : notifList.length === 0 ? (
-            <View className="bg-white rounded-2xl px-4 py-4 items-center">
-              <Text className="text-sm text-[#64748b]">No recent notifications</Text>
+            <View className="bg-white rounded-lg px-4 py-4 items-center">
+              <Text className="text-sm text-[#6b7c93]">No recent notifications</Text>
             </View>
           ) : (
             notifList.map((n, i) => (
               <View
                 key={n.id ?? i}
-                className={`bg-white rounded-2xl px-4 py-3 mb-2 border-l-2 ${
-                  n.readAt || n.read ? 'border-transparent' : 'border-[#0ea5e9]'
+                className={`bg-white rounded-lg px-4 py-3 mb-2 border-l-2 ${
+                  n.readAt || n.read ? 'border-transparent' : 'border-[#3d4ed7]'
                 }`}
               >
-                <Text className="text-sm font-medium text-[#0f172a]">
+                <Text className="text-sm font-medium text-[#0a2540]">
                   {n.title ?? n.subject ?? 'Notification'}
                 </Text>
                 {(n.message ?? n.body) ? (
-                  <Text className="text-xs text-[#64748b] mt-0.5" numberOfLines={2}>
+                  <Text className="text-xs text-[#6b7c93] mt-0.5" numberOfLines={2}>
                     {n.message ?? n.body}
                   </Text>
                 ) : null}

@@ -1,22 +1,36 @@
 import { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import useAuth from '../../hooks/useAuth';
+import AuthCanvas from '../../components/AuthCanvas';
+
+function Field({ label, focused, children, trailing }) {
+  return (
+    <View className="mb-4">
+      <Text className="text-[13px] font-medium text-[#0a2540] mb-1.5">{label}</Text>
+      <View
+        className="flex-row items-center rounded-xl px-3.5 h-[52px] bg-[#f6f9fc]"
+        style={{ borderWidth: 1.5, borderColor: focused ? '#3d4ed7' : '#e3e8ee' }}
+      >
+        {children}
+        {trailing}
+      </View>
+    </View>
+  );
+}
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [focus, setFocus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError('Enter your email and password.');
       return;
     }
     setError(null);
@@ -24,96 +38,93 @@ export default function LoginScreen({ navigation }) {
     try {
       await login(email.trim(), password);
     } catch (e) {
-      setError(e.message || 'Login failed. Please try again.');
+      setError(e.message || 'Sign-in failed. Try again.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-[#f8fafc]"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="flex-1 px-6 pt-24 pb-10">
-          {/* Wordmark */}
-          <View className="items-center mb-10">
-            <Text className="text-3xl font-bold text-[#0f172a]">Llah</Text>
-            <Text className="text-sm text-[#64748b] mt-1">Metered billing infrastructure</Text>
-          </View>
+    <AuthCanvas>
+      <View className="items-center mb-7">
+        <View className="w-14 h-14 rounded-2xl bg-white items-center justify-center mb-4">
+          <Text className="text-[#0a2540] text-[22px] font-bold">L</Text>
+          <View className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#3d4ed7]" />
+        </View>
+        <Text className="text-white text-[34px] font-semibold tracking-tight">Llah</Text>
+        <Text className="text-[#9aadc2] text-[15px] mt-2 text-center leading-5">
+          Sign in to the workspace you already use on the web.
+        </Text>
+      </View>
 
-          {/* Email */}
-          <View className="mb-4">
-            <Text className="text-xs font-medium text-[#64748b] mb-1.5 uppercase tracking-wide">Email</Text>
-            <TextInput
-              className="bg-white border border-[#e2e8f0] rounded-xl px-4 h-12 text-[#0f172a] text-sm"
-              placeholder="you@example.com"
-              placeholderTextColor="#94a3b8"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+      <View className="bg-white rounded-3xl px-5 pt-6 pb-6" style={{ shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 24, shadowOffset: { width: 0, height: 16 }, elevation: 8 }}>
+        <Text className="text-[22px] font-semibold text-[#0a2540]">Welcome back</Text>
+        <Text className="text-sm text-[#6b7c93] mt-1 mb-5">Email and password for this account.</Text>
 
-          {/* Password */}
-          <View className="mb-6">
-            <Text className="text-xs font-medium text-[#64748b] mb-1.5 uppercase tracking-wide">Password</Text>
-            <View className="flex-row items-center bg-white border border-[#e2e8f0] rounded-xl px-4 h-12">
-              <TextInput
-                className="flex-1 text-[#0f172a] text-sm"
-                placeholder="••••••••"
-                placeholderTextColor="#94a3b8"
-                secureTextEntry={!showPw}
-                autoComplete="password"
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPw(v => !v)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                {showPw
-                  ? <EyeOff size={18} color="#94a3b8" strokeWidth={1.5} />
-                  : <Eye size={18} color="#94a3b8" strokeWidth={1.5} />
-                }
-              </TouchableOpacity>
-            </View>
-          </View>
+        <Field label="Email" focused={focus === 'email'}>
+          <TextInput
+            className="flex-1 text-[#0a2540] text-[15px]"
+            placeholder="you@company.com"
+            placeholderTextColor="#8898aa"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            value={email}
+            onChangeText={setEmail}
+            onFocus={() => setFocus('email')}
+            onBlur={() => setFocus(null)}
+            returnKeyType="next"
+          />
+        </Field>
 
-          {/* Error */}
-          {error && (
-            <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
-              <Text className="text-sm text-red-600">{error}</Text>
-            </View>
-          )}
-
-          {/* Sign in button */}
-          <TouchableOpacity
-            className="bg-[#0f172a] rounded-xl h-12 items-center justify-center"
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#ffffff" />
-              : <Text className="text-white font-semibold text-sm">Sign in</Text>
-            }
-          </TouchableOpacity>
-
-          {/* Forgot password */}
-          <TouchableOpacity
-            className="mt-4 items-center"
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
-            <Text className="text-sm text-[#64748b]">Forgot password?</Text>
+        <View className="flex-row items-center justify-between mb-1.5">
+          <Text className="text-[13px] font-medium text-[#0a2540]">Password</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
+            <Text className="text-[13px] font-medium text-[#3d4ed7]">Forgot password?</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <View
+          className="flex-row items-center rounded-xl px-3.5 h-[52px] bg-[#f6f9fc] mb-4"
+          style={{ borderWidth: 1.5, borderColor: focus === 'password' ? '#3d4ed7' : '#e3e8ee' }}
+        >
+          <TextInput
+            className="flex-1 text-[#0a2540] text-[15px]"
+            placeholder="Password"
+            placeholderTextColor="#8898aa"
+            secureTextEntry={!showPw}
+            autoComplete="password"
+            value={password}
+            onChangeText={setPassword}
+            onFocus={() => setFocus('password')}
+            onBlur={() => setFocus(null)}
+            onSubmitEditing={handleLogin}
+            returnKeyType="go"
+          />
+          <TouchableOpacity onPress={() => setShowPw(v => !v)} hitSlop={8} accessibilityLabel={showPw ? 'Hide password' : 'Show password'}>
+            {showPw
+              ? <EyeOff size={18} color="#6b7c93" strokeWidth={1.75} />
+              : <Eye size={18} color="#6b7c93" strokeWidth={1.75} />}
+          </TouchableOpacity>
+        </View>
+
+        {error ? (
+          <View className="bg-[#fef2f2] border border-[#fecaca] rounded-xl px-3 py-2.5 mb-4">
+            <Text className="text-sm text-[#c41e3a] leading-5">{error}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity
+          className="bg-[#3d4ed7] rounded-xl h-[52px] items-center justify-center"
+          onPress={handleLogin}
+          disabled={loading}
+          accessibilityRole="button"
+          style={{ opacity: loading ? 0.75 : 1 }}
+        >
+          {loading
+            ? <ActivityIndicator color="#ffffff" />
+            : <Text className="text-white font-semibold text-[16px]">Sign in</Text>}
+        </TouchableOpacity>
+      </View>
+    </AuthCanvas>
   );
 }

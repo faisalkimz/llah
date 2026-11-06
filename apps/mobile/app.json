@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#f8fafc"
+      "backgroundColor": "#f6f9fc"
     },
     "ios": {
       "supportsTablet": false,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#f8fafc"
+        "backgroundColor": "#f6f9fc"
       },
       "package": "com.llah.mobile"
     },

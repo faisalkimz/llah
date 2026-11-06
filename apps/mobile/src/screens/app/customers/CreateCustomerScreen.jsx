@@ -62,10 +62,10 @@ export default function CreateCustomerScreen({ navigation }) {
   }
 
   return (
-    <View className="flex-1 bg-[#f8fafc]">
+    <View className="flex-1 bg-[#f6f9fc]">
       {/* Custom header */}
       <View
-        className="bg-white border-b border-[#e2e8f0] px-2 pb-3"
+        className="bg-white border-b border-[#e3e8ee] px-2 pb-3"
         style={{ paddingTop: insets.top + 8 }}
       >
         <View className="flex-row items-center">
@@ -74,9 +74,9 @@ export default function CreateCustomerScreen({ navigation }) {
             className="p-2"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <X size={22} color="#0f172a" strokeWidth={1.5} />
+            <X size={22} color="#0a2540" strokeWidth={1.5} />
           </TouchableOpacity>
-          <Text className="flex-1 text-base font-semibold text-[#0f172a] ml-1">New customer</Text>
+          <Text className="flex-1 text-base font-semibold text-[#0a2540] ml-1">New customer</Text>
         </View>
       </View>
 
@@ -92,72 +92,72 @@ export default function CreateCustomerScreen({ navigation }) {
           {/* API error banner */}
           {apiError ? (
             <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
-              <Text className="text-sm text-[#ef4444]">{apiError}</Text>
+              <Text className="text-sm text-[#c41e3a]">{apiError}</Text>
             </View>
           ) : null}
 
           {/* Name field */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-[#0f172a] mb-1.5">
-              Name <Text className="text-[#ef4444]">*</Text>
+            <Text className="text-sm font-medium text-[#0a2540] mb-1.5">
+              Name <Text className="text-[#c41e3a]">*</Text>
             </Text>
             <TextInput
               value={name}
               onChangeText={setName}
               placeholder="Acme Corp"
-              placeholderTextColor="#94a3b8"
-              className={`bg-white border rounded-xl px-4 h-12 text-sm text-[#0f172a] ${
-                errors.name ? 'border-[#ef4444]' : 'border-[#e2e8f0]'
+              placeholderTextColor="#8898aa"
+              className={`bg-white border rounded-xl px-4 h-12 text-sm text-[#0a2540] ${
+                errors.name ? 'border-[#c41e3a]' : 'border-[#e3e8ee]'
               }`}
               autoCapitalize="words"
             />
             {errors.name ? (
-              <Text className="text-xs text-[#ef4444] mt-1">{errors.name}</Text>
+              <Text className="text-xs text-[#c41e3a] mt-1">{errors.name}</Text>
             ) : null}
           </View>
 
           {/* Email field */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-[#0f172a] mb-1.5">
-              Email <Text className="text-[#ef4444]">*</Text>
+            <Text className="text-sm font-medium text-[#0a2540] mb-1.5">
+              Email <Text className="text-[#c41e3a]">*</Text>
             </Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="billing@acme.com"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#8898aa"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              className={`bg-white border rounded-xl px-4 h-12 text-sm text-[#0f172a] ${
-                errors.email ? 'border-[#ef4444]' : 'border-[#e2e8f0]'
+              className={`bg-white border rounded-xl px-4 h-12 text-sm text-[#0a2540] ${
+                errors.email ? 'border-[#c41e3a]' : 'border-[#e3e8ee]'
               }`}
             />
             {errors.email ? (
-              <Text className="text-xs text-[#ef4444] mt-1">{errors.email}</Text>
+              <Text className="text-xs text-[#c41e3a] mt-1">{errors.email}</Text>
             ) : null}
           </View>
 
           {/* External ID field */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-[#0f172a] mb-1.5">External ID</Text>
+            <Text className="text-sm font-medium text-[#0a2540] mb-1.5">External ID</Text>
             <TextInput
               value={externalId}
               onChangeText={setExternalId}
               placeholder="cus_abc123"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#8898aa"
               autoCapitalize="none"
               autoCorrect={false}
-              className="bg-white border border-[#e2e8f0] rounded-xl px-4 h-12 text-sm text-[#0f172a]"
+              className="bg-white border border-[#e3e8ee] rounded-xl px-4 h-12 text-sm text-[#0a2540]"
             />
-            <Text className="text-xs text-[#64748b] mt-1">
+            <Text className="text-xs text-[#6b7c93] mt-1">
               Your internal identifier for this customer
             </Text>
           </View>
 
           {/* Submit button */}
           <TouchableOpacity
-            className="bg-[#0f172a] rounded-xl h-12 items-center justify-center mt-4"
+            className="bg-[#0a2540] rounded-xl h-12 items-center justify-center mt-4"
             onPress={handleSubmit}
             disabled={mutation.isPending}
             activeOpacity={0.85}
