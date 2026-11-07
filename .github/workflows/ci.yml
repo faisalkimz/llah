@@ -1,7 +1,14 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+# Temporarily disabled pending GitHub Actions billing flag resolution
+# Remove the `if: false` line below once Actions are unblocked
 jobs:
   test:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
