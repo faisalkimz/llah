@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WS_URL = (import.meta.env.VITE_WS_URL || 'ws://localhost:4000/ws');
+const WS_URL = (import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:4000/ws');
 
 /**
  * React hook for connecting to the Llah WebSocket real-time feed.

@@ -127,7 +127,7 @@ function OrgSwitcher({ collapsed }) {
         const token = localStorage.getItem('llah_access_token');
         if (!token) return;
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:4000/v1'}/organizations`,
+          `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/v1'}/organizations`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const json = await res.json();
@@ -312,7 +312,7 @@ export default function AppLayout() {
       const refreshToken = localStorage.getItem('llah_refresh_token');
       if (refreshToken) {
         await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:4000/v1'}/auth/logout`,
+          `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/v1'}/auth/logout`,
           {
             method: 'POST',
             headers: {

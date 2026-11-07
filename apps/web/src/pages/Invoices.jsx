@@ -81,7 +81,7 @@ function InvoiceDetail({ invoiceId, onBack, onReload }) {
             onClick={() => {
               const token = localStorage.getItem('llah_access_token');
               const orgId = localStorage.getItem('current_organization_id');
-              const base = import.meta.env.VITE_API_URL || 'http://localhost:4000/v1';
+              const base = import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/v1';
               // Open PDF in new window — auth handled via query param for simplicity
               window.open(`${base}/invoices/${invoice.id}/pdf`, '_blank');
             }}

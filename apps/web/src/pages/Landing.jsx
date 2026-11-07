@@ -228,7 +228,7 @@ export default function Landing() {
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: Users, title: 'Team', body: 'Invite people into the organization and keep membership on the workspace.', art: '/marketing/dash-customers.svg' },
-              { icon: Shield, title: 'Audit log', body: 'Sensitive changes are recorded so you can see who did what.', art: '/marketing/dash-developer.svg' },
+              { icon: Shield, title: 'Audit log', body: 'Sensitive changes are recorded so you can see who did what.', art: '/marketing/dash-audit.svg' },
               { icon: Wallet, title: 'Credits and refunds', body: 'Apply a credit or refund against a real invoice or payment.', art: '/marketing/dash-payments.svg' },
               { icon: Percent, title: 'Tax and coupons', body: 'Rates and coupon codes are stored with the organization, then used when a bill is built.', art: '/marketing/dash-invoice.svg' },
               { icon: Bell, title: 'Alerts', body: 'Watch for conditions you set, such as failed payments, and keep the notification in the workspace.', art: '/marketing/dash-payments.svg' },

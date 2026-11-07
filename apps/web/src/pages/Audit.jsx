@@ -7,7 +7,7 @@ import DataTable, { TablePagination } from '../components/ui/DataTable.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/v1';
+const BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:4000/v1';
 const LIMIT = 20;
 
 export default function Audit() {
