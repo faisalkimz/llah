@@ -109,4 +109,4 @@ Tests require a live PostgreSQL connection.
 
 ## License
 
-Private.
+[MIT](LICENSE) — open source, free to use, modify, and distribute.
